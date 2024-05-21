@@ -56,8 +56,6 @@ args = parser.parse_args()
 openai_client = completion.OpenAIClient(
     model=args.model,
     temperature=args.temperature,
-    frequency_penalty=args.frequency_penalty,
-    presence_penalty=args.presence_penalty,
 )
 github_client = githubs.GithubClient(
     openai_client=openai_client,

@@ -23,14 +23,6 @@ inputs:
     description: "Temperature for the model"
     default: '0.2'
     required: false
-  frequency_penalty:
-    description: "Frequency penalty for the model"
-    default: '0'
-    required: false
-  presence_penalty:
-    description: "Presence penalty for the model"
-    default: '0'
-    required: false
   review_per_file:
     description: "Send out review requests per file"
     default: 'False'
@@ -46,8 +38,6 @@ runs:
   args:
   - --model=${{ inputs.model }}
   - --temperature=${{ inputs.temperature }}
-  - --frequency-penalty=${{ inputs.frequency_penalty }}
-  - --presence-penalty=${{ inputs.presence_penalty }}
   - --review-per-file=${{ inputs.review_per_file }}
   - --comment-per-file=${{ inputs.comment_per_file }}
   - --blocking=${{ inputs.blocking }}
