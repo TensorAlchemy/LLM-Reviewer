@@ -12,7 +12,8 @@ client = OpenAI()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-system_prompt = """As a tech reviewer, please provide an in-depth review of the
+system_prompt_old = """
+As a tech reviewer, please provide an in-depth review of the
 following pull request git diff data. Your task is to carefully analyze the title, body, and
 changes made in the pull request and identify any problems that need addressing including 
 security issues. Please provide clear descriptions of each problem and offer constructive 
@@ -22,6 +23,17 @@ improve the quality of the codebase while also remaining concise and clear in yo
 explanations. Please note that unnecessary explanations or summaries should be avoided
 as they may delay the review process. Your feedback should be provided in a timely
 manner, using language that is easy to understand and follow.
+"""
+
+system_prompt = """
+As a tech reviewer, please provide an in-depth review of the
+following pull request git diff data. Your task is to carefully analyze the title, body, and
+changes made in the pull request and identify any problems that need addressing including 
+security issues.
+
+You should only pointing out additional information when you think a senior engineer might not understand. 
+When there is complex changes required, you write clearly in bullet points the required changes
+without being overly verbose about each point. Please be as compact as possible.
 """
 
 
@@ -97,3 +109,8 @@ And bellowing are changes for file {filename}:
 ```
     """
         return prompt
+
+
+if __name__ == "__main__":
+    cli = OpenAIClient(model="gpt-4o", temperature=0.2)
+    # print(cli.get_completion_text("hello"))
