@@ -80,14 +80,9 @@ class OpenAIClient:
 
         return completion.choices[0].message.content
 
-    def get_pr_prompt(self, title, body, changes) -> str:
+    def get_pr_prompt(self, changes) -> str:
         """Generate a prompt for a PR review"""
-        prompt = f"""Here are the title, body and changes for this pull request:
-
-Title: {title}
-
-Body: {body}
-
+        prompt = f"""Here are changes for this PR:
 Changes:
 ```
 {changes}
@@ -95,15 +90,9 @@ Changes:
     """
         return prompt
 
-    def get_file_prompt(self, title, body, filename, changes) -> str:
+    def get_file_prompt(self, filename, changes) -> str:
         """Generate a prompt for a file review"""
-        prompt = f"""Here are the title, body and changes for this pull request:
-
-Title: {title}
-
-Body: {body}
-
-And bellowing are changes for file {filename}:
+        prompt = f"""Here are changes for file `{filename}` within this PR:
 ```
 {changes}
 ```

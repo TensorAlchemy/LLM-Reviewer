@@ -104,7 +104,7 @@ class GithubClient:
             and not self.review_per_file
         ):
             # Review the full PR changes together
-            prompt = self.openai_client.get_pr_prompt(pr.title, pr.body, changes)
+            prompt = self.openai_client.get_pr_prompt(changes)
             completion = self.get_completion(prompt)
             if completion != "":
                 reviewComments = f"""@{pr.user.login} Thanks for your contributions!\n\n{completion}"""
@@ -119,9 +119,7 @@ class GithubClient:
                 file.previous_filename, file.filename, file.patch
             )
             print(f"File patch:\n{file.patch}")
-            prompt = self.openai_client.get_file_prompt(
-                pr.title, pr.body, file.filename, file_changes
-            )
+            prompt = self.openai_client.get_file_prompt(file.filename, file_changes)
             print(f"File prompt:\n{prompt}")
             completion = self.get_completion(prompt)
             print(f"Completion:\n{completion}")
