@@ -66,7 +66,7 @@ class OpenAIClient:
             temperature=self.temperature,
         )
 
-        return completion.choices[0].message
+        return completion.choices[0].message.content
 
     def get_pr_prompt(self, title, body, changes) -> str:
         """Generate a prompt for a PR review"""
