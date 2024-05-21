@@ -118,22 +118,31 @@ class GithubClient:
             file_changes = self.cut_changes(
                 file.previous_filename, file.filename, file.patch
             )
+            print(f"File patch:\n{file.patch}")
             prompt = self.openai_client.get_file_prompt(
                 pr.title, pr.body, file.filename, file_changes
             )
+            print(f"File prompt:\n{prompt}")
             completion = self.get_completion(prompt)
+            print(f"Completion:\n{completion}")
             if completion == "":
                 continue
             if self.comment_per_file:
                 # Create a review comment on the file
                 reviewComments = f"""@{pr.user.login} Thanks for your contributions!\n\n{completion}"""
                 line_no = re.search("\@\@ \-(\d+),", file.patch).group(1)
-                pr.create_review_comment(
-                    body=reviewComments,
-                    commit=list(pr.get_commits())[-1],
-                    path=file.filename,
-                    line=int(line_no),
-                )
+                line_no = int(line_no)
+                if line_no > 0:
+                    pr.create_review_comment(
+                        body=reviewComments,
+                        commit=list(pr.get_commits())[-1],
+                        path=file.filename,
+                        line=line_no,
+                    )
+                else:
+                    print(
+                        f"error: line number is {line_no}, not creating review comment"
+                    )
             else:
                 reviews = reviews + [
                     f"**Here are review comments for file {file.filename}:**\n{completion}\n\n"
