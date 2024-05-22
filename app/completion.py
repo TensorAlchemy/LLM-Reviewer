@@ -119,7 +119,7 @@ class OpenAIClient:
 {changes}
 ```
 Please comment in the json standard on the above given changes. 
-Produce pure JSON output, without any extra symbols, example:
+Produce pure JSON output, without any extra symbols (like ```json etc.), example:
 {{
   "pr_comment": "your short comment on whole PR (should be compact)",
   "file_comments" : [

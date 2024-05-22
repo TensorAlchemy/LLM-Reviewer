@@ -4,6 +4,8 @@
 import json
 import os
 import argparse
+import sys
+
 import distutils
 import completion
 import githubs
@@ -79,6 +81,7 @@ print(f"Evaluating {eventType} event")
 # Review the changes via ChatGPT
 match eventType:
     case githubs.EVENT_TYPE_PULL_REQUEST:
-        github_client.review_pr(payload)
+        if not github_client.review_pr(payload):
+            sys.exit(1)
     case _:
         print(f"{eventType} event is not supported yet, skipping")
