@@ -26,14 +26,8 @@ manner, using language that is easy to understand and follow.
 """
 
 system_prompt = """
-As a tech reviewer, please provide an in-depth review of the
-following pull request git diff data. Your task is to carefully analyze the title, body, and
-changes made in the pull request and identify any problems that need addressing including 
-security issues.
-
-You should only pointing out additional information when you think a senior engineer might not understand. 
-When there is complex changes required, you write clearly in bullet points the required changes
-without being overly verbose about each point. Please be as compact as possible.
+You are expert Python developer that are reviewing Pull Requests. 
+Be compact in your reviews and highlight most important things (i.e. potential bugs and critical parts in code)
 """
 
 
@@ -81,12 +75,23 @@ class OpenAIClient:
         return completion.choices[0].message.content
 
     def get_pr_prompt(self, changes) -> str:
-        """Generate a prompt for a PR review"""
+        """Generate a prompt for a PR review to give JSON output with line and comments"""
         prompt = f"""Here are changes for this PR:
-Changes:
 ```
 {changes}
 ```
+Please comment in the json standard on the above given changes.
+{{
+  "pr_comment": "your short comment on whole PR (should be compact)",
+  "file_comments" : [
+      {{
+        "file": "path/somefile.py",
+        "line": 200,
+        "comment": "somecomment",
+      }},
+      ...
+  ]
+}}
     """
         return prompt
 

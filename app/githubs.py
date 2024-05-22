@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
+import json
 import os
 import re
 import requests
@@ -96,57 +97,49 @@ class GithubClient:
                 print(f"OpenAI failed on prompt {prompt} with exception {e}")
                 return ""
 
-    def review_pr(self, payload):
-        """Review a PR"""
+    def review_pr(self, payload) -> bool:
+        """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
-        if (
-            len(self.openai_client.encoder.encode(changes)) < self.review_tokens
-            and not self.review_per_file
-        ):
-            # Review the full PR changes together
-            prompt = self.openai_client.get_pr_prompt(changes)
-            completion = self.get_completion(prompt)
-            if completion != "":
-                reviewComments = f"""@{pr.user.login} Thanks for your contributions!\n\n{completion}"""
-                pr.create_issue_comment(reviewComments)
-            return
 
-        # Review each file changes separately
+        # if (
+        #     len(self.openai_client.encoder.encode(changes)) < self.review_tokens
+        #     and not self.review_per_file
+        # ):
+        # Review the full PR changes together
+
+        prompt = self.openai_client.get_pr_prompt(changes)
+        review_json_str = self.get_completion(prompt)
+        print(f"review_json={review_json_str}")
+        try:
+            review_json = json.loads(review_json_str)
+            pr_comment = review_json["pr_comment"]
+            print(f"pr_comment={pr_comment}")
+            file_comments = review_json["file_comments"]
+            print(f"file_comments={pr_comment}")
+        except Exception as e:
+            print(f"Exception while generating PR review: {e}")
+            return False
+
+        # Create comment on whole PR
+        pr.create_issue_comment(pr_comment)
+
         files_changed = pr.get_files()
-        reviews = []
         for file in files_changed:
-            file_changes = self.cut_changes(
-                file.previous_filename, file.filename, file.patch
-            )
-            print(f"File patch:\n{file.patch}")
-            prompt = self.openai_client.get_file_prompt(file.filename, file_changes)
-            print(f"File prompt:\n{prompt}")
-            completion = self.get_completion(prompt)
-            print(f"Completion:\n{completion}")
-            if completion == "":
-                continue
-            if self.comment_per_file:
-                # Create a review comment on the file
-                reviewComments = f"""@{pr.user.login} Thanks for your contributions!\n\n{completion}"""
-                line_no = re.search("\@\@ \-(\d+),", file.patch).group(1)
-                line_no = int(line_no)
-                if line_no > 0:
-                    pr.create_review_comment(
-                        body=reviewComments,
-                        commit=list(pr.get_commits())[-1],
-                        path=file.filename,
-                        line=line_no,
-                    )
-                else:
-                    print(
-                        f"error: line number is {line_no}, not creating review comment"
-                    )
-            else:
-                reviews = reviews + [
-                    f"**Here are review comments for file {file.filename}:**\n{completion}\n\n"
-                ]
+            for comment in file_comments:
+                if file.filename == comment["file"]:
+                    try:
+                        lineno = int(comment["line"])
+                        # Create comment on certain PR line
+                        pr.create_review_comment(
+                            body=comment["comment"],
+                            commit=list(pr.get_commits())[-1],
+                            path=file.filename,
+                            line=lineno,
+                        )
+                    except Exception as e:
+                        print(
+                            f"failed to comment on file={file.filename}:{lineno}: {e}"
+                        )
+                        continue
 
-        if len(reviews) > 0:
-            # Create a review comment on the PR
-            reviewComments = f"""@{pr.user.login} Thanks for your contributions!\n\n{''.join(reviews)}"""
-            pr.create_issue_comment(reviewComments)
+        return True
