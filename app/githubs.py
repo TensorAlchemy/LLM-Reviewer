@@ -137,6 +137,8 @@ class GithubClient:
                 if file.filename == comment["file"]:
                     try:
                         lineno = int(comment["line"])
+                        # Add +1 to lineno to make sure actual line is visible
+                        lineno += 1
                         # Create comment on certain PR line
                         pr.create_review_comment(
                             body=comment["comment"],
