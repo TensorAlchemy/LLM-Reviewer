@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 import os
+from typing import Tuple
+
 import backoff
 import openai
 import tiktoken
@@ -12,22 +14,12 @@ client = OpenAI()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-system_prompt_old = """
-As a tech reviewer, please provide an in-depth review of the
-following pull request git diff data. Your task is to carefully analyze the title, body, and
-changes made in the pull request and identify any problems that need addressing including 
-security issues. Please provide clear descriptions of each problem and offer constructive 
-suggestions for how to address them. Additionally, please consider ways to optimize the 
-changes made in the pull request. You should focus on providing feedback that will help
-improve the quality of the codebase while also remaining concise and clear in your
-explanations. Please note that unnecessary explanations or summaries should be avoided
-as they may delay the review process. Your feedback should be provided in a timely
-manner, using language that is easy to understand and follow.
-"""
-
 system_prompt = """
 You are expert Python developer that are reviewing Pull Requests. 
-Be compact in your reviews and highlight most important things (i.e. potential bugs and critical parts in code)
+Be compact in your reviews and highlight only important things 
+(i.e. potential bugs, security issues and critical parts in code).
+
+Don't put useless comments like "dependency was updated from 1.0.1 to 1.0.2".
 """
 
 
@@ -52,11 +44,8 @@ class OpenAIClient:
         (openai.RateLimitError, openai.APIConnectionError, openai.InternalServerError),
         max_time=300,
     )
-    def get_completion(self, prompt) -> str:
-        return self.get_completion_text(prompt)
-
-    def get_completion_text(self, prompt) -> str:
-        """Invoke OpenAI API to get text completion"""
+    def get_completion(self, prompt) -> Tuple[str, str]:
+        """Invoke OpenAI API to get text completion and cost"""
         completion = client.chat.completions.create(
             model=self.model,
             messages=[
@@ -72,7 +61,55 @@ class OpenAIClient:
             temperature=self.temperature,
         )
 
-        return completion.choices[0].message.content
+        cost = self.calculate_cost(completion.usage)
+        content = completion.choices[0].message.content
+
+        return content, cost
+
+    def calculate_cost(self, usage_obj):
+        pricing = {
+            "gpt-3.5-turbo-1106": {
+                "prompt": 0.001,
+                "completion": 0.002,
+            },
+            "gpt-4-1106-preview": {
+                "prompt": 0.01,
+                "completion": 0.03,
+            },
+            "gpt-4-0125-preview": {
+                "prompt": 0.01,
+                "completion": 0.03,
+            },
+            "gpt-4": {
+                "prompt": 0.03,
+                "completion": 0.06,
+            },
+            "gpt-4o": {
+                "prompt": 0.005,
+                "completion": 0.015,
+            },
+        }
+
+        try:
+            model_pricing = pricing[self.model]
+        except KeyError:
+            raise ValueError("Invalid model specified")
+
+        # Workaround when usage_obj is dict
+        if isinstance(usage_obj, dict):
+            prompt_tokens = usage_obj["prompt_tokens"]
+            completion_tokens = usage_obj["completion_tokens"]
+        else:
+            prompt_tokens = usage_obj.prompt_tokens
+            completion_tokens = usage_obj.completion_tokens
+
+        prompt_cost = prompt_tokens * model_pricing["prompt"] / 1000
+        completion_cost = completion_tokens * model_pricing["completion"] / 1000
+        total_cost = prompt_cost + completion_cost
+        # round to 4 decimals
+        total_cost = round(total_cost, 4)
+
+        return total_cost
 
     def get_pr_prompt(self, changes) -> str:
         """Generate a prompt for a PR review to give JSON output with line and comments"""
@@ -107,4 +144,11 @@ Please comment in the json standard on the above given changes.
 
 if __name__ == "__main__":
     cli = OpenAIClient(model="gpt-4o", temperature=0.2)
-    # print(cli.get_completion_text("hello"))
+    print(
+        cli.get_completion(
+            """
+    
+    
+    """
+        )
+    )

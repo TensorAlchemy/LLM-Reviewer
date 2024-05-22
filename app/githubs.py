@@ -4,6 +4,8 @@
 import json
 import os
 import re
+from typing import Tuple
+
 import requests
 from github import Github
 
@@ -85,11 +87,11 @@ class GithubClient:
                 return line
         return ""
 
-    def get_completion(self, prompt) -> str:
-        """Get the completion"""
+    def get_completion(self, prompt) -> Tuple[str, str]:
+        """Get the completion text and cost"""
         try:
-            completion = self.openai_client.get_completion(prompt)
-            return completion
+            completion_text, cost = self.openai_client.get_completion(prompt)
+            return completion_text, cost
         except Exception as e:
             if self.blocking:
                 raise e
@@ -108,7 +110,7 @@ class GithubClient:
         # Review the full PR changes together
 
         prompt = self.openai_client.get_pr_prompt(changes)
-        review_json_str = self.get_completion(prompt)
+        review_json_str, cost = self.get_completion(prompt)
         print(f"review_json={review_json_str}")
         try:
             review_json = json.loads(review_json_str)
@@ -121,7 +123,7 @@ class GithubClient:
             return False
 
         # Create comment on whole PR
-        pr.create_issue_comment(pr_comment)
+        pr.create_issue_comment(f"{pr_comment}\n\n(review cost=${cost})")
 
         files_changed = pr.get_files()
         for file in files_changed:
