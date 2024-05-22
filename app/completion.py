@@ -125,6 +125,7 @@ Produce pure JSON output, without any extra symbols, example:
   "file_comments" : [
       {{
         "file": "path/somefile.py",
+        "start_line": 198,
         "line": 200,
         "comment": "somecomment",
       }},

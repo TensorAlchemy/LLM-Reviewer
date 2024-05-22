@@ -136,20 +136,18 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-                        lineno = int(comment["line"])
-                        # Add +1 to lineno to make sure actual line is visible
-                        lineno += 1
+                        line = int(comment["line"])
+                        start_line = int(comment["start_line"])
                         # Create comment on certain PR line
                         pr.create_review_comment(
                             body=comment["comment"],
                             commit=list(pr.get_commits())[-1],
                             path=file.filename,
-                            line=lineno,
+                            line=line,
+                            start_line=start_line,
                         )
                     except Exception as e:
-                        print(
-                            f"failed to comment on file={file.filename}:{lineno}: {e}"
-                        )
+                        print(f"failed to comment on file={file.filename}:{line}: {e}")
                         continue
 
         return True
