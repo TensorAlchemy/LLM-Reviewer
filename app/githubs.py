@@ -147,6 +147,19 @@ class GithubClient:
                             start_line=start_line,
                         )
                     except Exception as e:
+                        if (
+                            "start_line must be part of the same hunk as the line."
+                            in str(e)
+                        ):
+                            print(f"not using start_line because of issue: {e}")
+                            pr.create_review_comment(
+                                body=comment["comment"],
+                                commit=list(pr.get_commits())[-1],
+                                path=file.filename,
+                                line=line,
+                            )
+                            continue
+
                         print(f"failed to comment on file={file.filename}:{line}: {e}")
                         continue
 
