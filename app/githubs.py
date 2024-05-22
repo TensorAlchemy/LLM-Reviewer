@@ -126,7 +126,10 @@ class GithubClient:
             return False
 
         # Create comment on whole PR
-        pr.create_issue_comment(f"{pr_comment}\n\n(review cost=${cost})")
+        pr.create_issue_comment(
+            f"{pr_comment}\n\n"
+            f"(review was done using={self.openai_client.model} with cost=${cost})"
+        )
 
         files_changed = pr.get_files()
         for file in files_changed:

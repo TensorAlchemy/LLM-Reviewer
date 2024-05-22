@@ -41,7 +41,7 @@ jobs:
 |OPENAI_API_KEY|API key used to invoke OpenAI|true|""|
 |OPENAI_API_BASE|API based used to access Azure OpenAI|false|""|
 |blocking|Blocking the pull requests on OpenAI failures|false|False|
-|model|OpenAI model name|false|gpt-3.5-turbo|
+|model|OpenAI model name|false|gpt-4o|
 |temperature|Temperature for the model|false|0.2|
 |review_per_file|Send out review requests per file|false|Large changes would be reviewed per file automatically|
 |comment_per_file|Post review comments per file|false|True

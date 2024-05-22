@@ -13,7 +13,7 @@ inputs:
     required: false
   model:
     description: "OpenAI model name"
-    default: "gpt-3.5-turbo"
+    default: "gpt-4o"
     required: false
   blocking:
     description: "Blocking the pull requests on OpenAI failures"
