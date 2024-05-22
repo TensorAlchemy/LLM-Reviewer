@@ -93,7 +93,7 @@ class OpenAIClient:
         try:
             model_pricing = pricing[self.model]
         except KeyError:
-            raise ValueError("Invalid model specified")
+            raise ValueError(f"Invalid model {self.model} specified")
 
         # Workaround when usage_obj is dict
         if isinstance(usage_obj, dict):

@@ -4,6 +4,7 @@
 import json
 import os
 import re
+import traceback
 from typing import Tuple
 
 import requests
@@ -96,7 +97,9 @@ class GithubClient:
             if self.blocking:
                 raise e
             else:
-                print(f"OpenAI failed on prompt {prompt} with exception {e}")
+                print(
+                    f"OpenAI failed on prompt with exception: {e}\n{traceback.format_exc()}"
+                )
                 return ""
 
     def review_pr(self, payload) -> bool:
