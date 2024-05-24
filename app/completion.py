@@ -25,6 +25,10 @@ attention of a senior developer, or if you spot a bug or unused variable etc.
 You should not comment on things just because they have changed, you should
 comment about logical errors in the codebase or things which could
 easily be missed by another senior developer.
+
+YOU MUST NOT MENTION CHECKING CONFIGURATION. Assume a senior developer.
+
+YOU MUST NOT MENTION CHECKING VARIABLE REFERENCES!
 """
 
 

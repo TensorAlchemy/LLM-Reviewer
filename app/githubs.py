@@ -136,9 +136,9 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-                        line = max(1, int(comment["line"]))
+                        line = max(2, int(comment["line"]))
                         start_line = max(1, int(comment["start_line"]))
-                        start_line = min(start_line, line)
+                        start_line = min(start_line, line - 1)
 
                         # Create comment on certain PR line
                         pr.create_review_comment(
