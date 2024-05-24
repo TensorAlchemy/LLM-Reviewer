@@ -136,8 +136,10 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-                        line = int(comment["line"])
-                        start_line = int(comment["start_line"])
+                        line = max(1, int(comment["line"]))
+                        start_line = max(1, int(comment["start_line"]))
+                        start_line = min(start_line, line)
+
                         # Create comment on certain PR line
                         pr.create_review_comment(
                             body=comment["comment"],
@@ -152,12 +154,20 @@ class GithubClient:
                             in str(e)
                         ):
                             print(f"not using start_line because of issue: {e}")
-                            pr.create_review_comment(
-                                body=comment["comment"],
-                                commit=list(pr.get_commits())[-1],
-                                path=file.filename,
-                                line=line,
-                            )
+
+                            try:
+                                pr.create_review_comment(
+                                    body="In this file: " + comment["comment"],
+                                    commit=list(pr.get_commits())[-1],
+                                    path=file.filename,
+                                    # Just comment on the same line
+                                    # sometimes GPT generates line no
+                                    # outside the range of lines in the file
+                                    line=1,
+                                )
+                            except Exception:
+                                print("Just skipping the error")
+
                             continue
 
                         print(f"failed to comment on file={file.filename}:{line}: {e}")

@@ -16,13 +16,15 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 system_prompt = """
 You are expert Python developer that are reviewing Pull Requests. 
-Be compact in your reviews and highlight only important things 
+Be compact in your reviews and highlight only important things.
 (i.e. potential bugs, security issues and critical parts in code).
 
-DON'T put useless comments like: 
-- "dependency was updated from 1.0.1 to 1.0.2" 
-- "Unused import removed. Ensure this does not affect other parts of the code."
-- "Ensure that the new method is correctly implemented and used."
+Please only submit a comment if the section actually requires the
+attention of a senior developer, or if you spot a bug or unused variable etc.
+
+You should not comment on things just because they have changed, you should
+comment about logical errors in the codebase or things which could
+easily be missed by another senior developer.
 """
 
 
@@ -120,16 +122,19 @@ class OpenAIClient:
 ```
 {changes}
 ```
-Please comment in the json standard on the above given changes. 
-Produce pure JSON output, without any extra symbols (like ```json etc.), example:
+Please comment in the JSON standard on the above given git diff.
+
+Produce pure JSON output, without any extra symbols (like ```json etc.),
+
+EXAMPLE:
 {{
-  "pr_comment": "your short comment on whole PR (should be compact)",
+  "pr_comment": "A short comment on the entire PR (should be compact)",
   "file_comments" : [
       {{
         "file": "path/somefile.py",
-        "start_line": 198,
-        "line": 200,
-        "comment": "somecomment",
+        "start_line": 198, <-- Must be <= line
+        "line": 200, <-- Should be the exact line you wish to specify
+        "comment": "somecomment", <-- Should be compact and helpful
       }},
       ...
   ]
