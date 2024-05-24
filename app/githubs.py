@@ -105,17 +105,24 @@ class GithubClient:
     def delete_old_comments(self, pr):
         """Delete old comments on the PR created by the bot"""
         print("Deleting old comments...")
-        github_action_bot_username = self.github_client.get_user().login
+        # Integration has no permission to get_user
+        # github_action_bot_username = self.github_client.get_user().login
 
         comments = pr.get_issue_comments()
         for comment in comments:
-            if comment.user.login == github_action_bot_username:
+            # if comment.user.login == github_action_bot_username:
+            try:
                 comment.delete()
+            except Exception as e:
+                print(f"failed to delete issue comment {e}")
 
         review_comments = pr.get_review_comments()
         for comment in review_comments:
-            if comment.user.login == github_action_bot_username:
+            # if comment.user.login == github_action_bot_username:
+            try:
                 comment.delete()
+            except Exception as e:
+                print(f"failed to delete review comment {e}")
 
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
