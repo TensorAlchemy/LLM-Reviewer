@@ -110,7 +110,7 @@ class GithubClient:
 
         comments = pr.get_issue_comments()
         for comment in comments:
-            # if comment.user.login == github_action_bot_username:
+            print(f"[1] deleting comment {comment}")
             try:
                 comment.delete()
             except Exception as e:
@@ -118,7 +118,7 @@ class GithubClient:
 
         review_comments = pr.get_review_comments()
         for comment in review_comments:
-            # if comment.user.login == github_action_bot_username:
+            print(f"[2] deleting comment {comment}")
             try:
                 comment.delete()
             except Exception as e:
