@@ -102,9 +102,27 @@ class GithubClient:
                 )
                 return ""
 
+    def delete_old_comments(self, pr):
+        """Delete old comments on the PR created by the bot"""
+        print("Deleting old comments...")
+        github_action_bot_username = self.github_client.get_user().login
+
+        comments = pr.get_issue_comments()
+        for comment in comments:
+            if comment.user.login == github_action_bot_username:
+                comment.delete()
+
+        review_comments = pr.get_review_comments()
+        for comment in review_comments:
+            if comment.user.login == github_action_bot_username:
+                comment.delete()
+
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
+
+        # Delete old comments before adding new ones
+        self.delete_old_comments(pr)
 
         # if (
         #     len(self.openai_client.encoder.encode(changes)) < self.review_tokens
