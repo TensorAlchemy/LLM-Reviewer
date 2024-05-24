@@ -102,34 +102,49 @@ class GithubClient:
                 )
                 return ""
 
-    def delete_old_comments(self, pr):
+    def delete_old_comments(self, pr, attempt=1):
         """Delete old comments on the PR created by the bot"""
-        print("Deleting old comments...")
-        # Integration has no permission to get_user
-        # github_action_bot_username = self.github_client.get_user().login
 
-        comments = pr.get_issue_comments()
-        for comment in comments:
-            print(f"[1] deleting comment {comment}")
-            try:
-                comment.delete()
-            except Exception as e:
-                print(f"failed to delete issue comment {e}")
+        # Comments API returning paged data, so need to iterate few times to make sure
+        # that all comments are deleted
+        max_num_of_delete_steps = 16
+        for i in range(max_num_of_delete_steps):
+            print(f"Deleting old comments [{i}]")
+            # Integration has no permission to get_user
+            # github_action_bot_username = self.github_client.get_user().login
+            comments = list(pr.get_issue_comments())
+            for comment in comments:
+                # Make sure only touch our bot's comments
+                if not comment.user.login.startswith("github-actions"):
+                    continue
 
-        review_comments = pr.get_review_comments()
-        for comment in review_comments:
-            print(f"[2] deleting comment {comment}")
-            try:
-                comment.delete()
-            except Exception as e:
-                print(f"failed to delete review comment {e}")
+                try:
+                    comment.delete()
+                except Exception as e:
+                    print(f"failed to delete issue comment {e}")
+
+            review_comments = list(pr.get_review_comments())
+
+            if len(review_comments) == 0 and len(comments) == 0:
+                # No comments left
+                break
+
+            for comment in review_comments:
+                # Make sure only touch our bot's comments
+                if not comment.user.login.startswith("github-actions"):
+                    continue
+
+                try:
+                    comment.delete()
+                except Exception as e:
+                    print(f"failed to delete review comment {e}")
 
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
 
         # Delete old comments before adding new ones
-        self.delete_old_comments(pr)
+        pr_comments_left = self.delete_old_comments(pr)
 
         # if (
         #     len(self.openai_client.encoder.encode(changes)) < self.review_tokens
