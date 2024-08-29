@@ -23,16 +23,16 @@ class GithubClient:
 
     def __init__(
         self,
-        openai_client,
+        llm_client,
         review_per_file=False,
         comment_per_file=False,
         blocking=False,
     ):
-        self.openai_client = openai_client
+        self.llm_client = llm_client
         self.github_token = os.getenv("GITHUB_TOKEN")
         self.github_client = Github(self.github_token)
         self.review_tokens = (
-            self.openai_client.max_tokens - self.openai_client.min_tokens
+            self.llm_client.max_tokens - self.llm_client.min_tokens
         )
         self.review_per_file = review_per_file
         self.comment_per_file = comment_per_file
@@ -72,7 +72,7 @@ class GithubClient:
 
         # add a patch header
         patch = f"diff --git a/{previous_filename} b/{filename}\n{patch}"
-        if len(self.openai_client.encoder.encode(patch)) < self.review_tokens:
+        if self.llm_client.count_tokens(patch) < self.review_tokens:
             return patch
 
         # TODO: it is not a good idea to cut the contents, need figure out a better way
@@ -84,21 +84,21 @@ class GithubClient:
         while i > 0:
             i -= 1
             line = "\n".join(lines[:i])
-            if len(self.openai_client.encoder.encode(line)) < self.review_tokens:
+            if self.llm_client.count_tokens(line) < self.review_tokens:
                 return line
         return ""
 
     def get_completion(self, prompt) -> Tuple[str, str]:
         """Get the completion text and cost"""
         try:
-            completion_text, cost = self.openai_client.get_completion(prompt)
+            completion_text, cost = self.llm_client.get_completion(prompt)
             return completion_text, cost
         except Exception as e:
             if self.blocking:
                 raise e
             else:
                 print(
-                    f"OpenAI failed on prompt with exception: {e}\n{traceback.format_exc()}"
+                    f"The LLM failed on prompt with exception: {e}\n{traceback.format_exc()}"
                 )
                 return ""
 
@@ -147,12 +147,12 @@ class GithubClient:
         pr_comments_left = self.delete_old_comments(pr)
 
         # if (
-        #     len(self.openai_client.encoder.encode(changes)) < self.review_tokens
+        #     len(self.llm_client.encoder.encode(changes)) < self.review_tokens
         #     and not self.review_per_file
         # ):
         # Review the full PR changes together
 
-        prompt = self.openai_client.get_pr_prompt(changes)
+        prompt = self.llm_client.get_pr_prompt(changes)
         review_json_str, cost = self.get_completion(prompt)
         print(f"review_json={review_json_str}")
         try:
@@ -168,7 +168,7 @@ class GithubClient:
         # Create comment on whole PR
         pr.create_issue_comment(
             f"{pr_comment}\n\n"
-            f"(review was done using={self.openai_client.model} with cost=${cost})"
+            f"(review was done using={self.llm_client.model} with cost=${cost})"
         )
 
         files_changed = pr.get_files()

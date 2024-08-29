@@ -12,18 +12,18 @@ import githubs
 
 
 # Check required environment variables
-if os.getenv("GITHUB_TOKEN") == "":
+if not os.getenv("GITHUB_TOKEN"):
     print("Please set the GITHUB_TOKEN environment variable")
     exit(1)
-if os.getenv("OPENAI_API_KEY") == "":
-    print("Please set the OPENAI_API_KEY environment variable")
+if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
+    print("Please set the OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable")
     exit(1)
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-    description="Automated pull requests reviewing and issues triaging with ChatGPT"
+    description="Automated pull requests reviewing and issues triaging with an LLM"
 )
-parser.add_argument("--model", help="OpenAI model", type=str, default="gpt-4o")
+parser.add_argument("--model", help="LLM model", type=str, default="claude-3-5-sonnet-20240620")
 parser.add_argument(
     "--temperature", help="Temperature for the model", type=float, default=0.2
 )
@@ -47,7 +47,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--blocking",
-    help="Blocking the pull requests on OpenAI failures",
+    help="Blocking the pull requests on LLM failures",
     type=distutils.util.strtobool,
     default=False,
 )
@@ -55,12 +55,12 @@ args = parser.parse_args()
 
 
 # Initialize clients
-openai_client = completion.OpenAIClient(
+llm_client = completion.LLMClient(
     model=args.model,
     temperature=args.temperature,
 )
 github_client = githubs.GithubClient(
-    openai_client=openai_client,
+    llm_client=llm_client,
     review_per_file=args.review_per_file,
     comment_per_file=args.comment_per_file,
     blocking=args.blocking,
@@ -78,7 +78,7 @@ eventType = github_client.get_event_type(payload)
 print(f"Evaluating {eventType} event")
 
 
-# Review the changes via ChatGPT
+# Review the changes via an LLM
 match eventType:
     case githubs.EVENT_TYPE_PULL_REQUEST:
         if not github_client.review_pr(payload):

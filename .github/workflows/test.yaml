@@ -15,14 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: ChatGPT Reviewer
+    - name: LLM Reviewer
       uses: ./
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       with:
         temperature: 0.1
         review_per_file: true
         comment_per_file: true
-        model: gpt-35-turbo
+        model: gpt-4o-mini
