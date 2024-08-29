@@ -204,7 +204,9 @@ Please comment in the JSON standard on the above given git diff.
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
-Use line numbers of the diff itself, not the whole file.
+Use the line numbers in the patched code, e.g. for a hunk header:
+@@ -46,77 +104,92 @@
+use the line numbers starting from 104, not 46.
 
 EXAMPLE:
 {{

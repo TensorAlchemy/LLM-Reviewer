@@ -180,16 +180,18 @@ class GithubClient:
 #                        start_line = max(1, int(comment["start_line"]))
 #                        line = max(line, start_line + 5)
 
-                        line = comment["line"]
-                        start_line = comment["start_line"]
+                        lines = {
+                            "line": comment["line"]
+                        }
+                        if comment["start_line"] != comment["line"]:
+                            lines["start_line"] = comment["start_line"]
 
                         # Create comment on certain PR line
                         pr.create_review_comment(
                             body=comment["comment"],
                             commit=list(pr.get_commits())[-1],
                             path=file.filename,
-                            line=line,
-                            start_line=start_line,
+                            **lines,
                         )
                     except Exception as e:
                         if (
