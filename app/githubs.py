@@ -189,7 +189,7 @@ class GithubClient:
             file_comments = review_json.get("file_comments", [])
             print(f"file_comments={file_comments}")
         except Exception as e:
-            print(f"Exception while generating PR review: {e}")
+            print(f"Exception while generating PR review: {e}\ntraceback.format_exc()")
             return False
 
         if file_comments and pr_comment == "LGTM":
