@@ -1,0 +1,25 @@
+name: LLM PR Review
+
+on: [pull_request]
+
+jobs:
+  llm-review:
+    name: LLM Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: TensorAlchemy/LLM-Reviewer@${{GITHUB_REF#refs/heads/}}
+        name: LLM PR Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          temperature: 0.3
+          review_per_file: true
+          comment_per_file: true
+#          model: gpt-4o-mini
