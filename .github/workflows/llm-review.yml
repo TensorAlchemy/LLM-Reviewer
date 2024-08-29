@@ -11,7 +11,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: TensorAlchemy/LLM-Reviewer@${{GITHUB_REF#refs/heads/}}
+      - uses: TensorAlchemy/LLM-Reviewer@${{ github.head_ref }}
         name: LLM PR Review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
