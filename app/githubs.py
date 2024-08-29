@@ -156,7 +156,7 @@ class GithubClient:
             pr_comment = review_json["pr_comment"]
             print(f"pr_comment={pr_comment}")
             file_comments = review_json.get("file_comments", [])
-            print(f"file_comments={pr_comment}")
+            print(f"file_comments={file_comments}")
         except Exception as e:
             print(f"Exception while generating PR review: {e}")
             return False
