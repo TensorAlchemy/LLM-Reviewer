@@ -206,7 +206,8 @@ class LLMClient:
 ```
 {changes}
 ```
-Please comment in the JSON standard on the above given git diff.
+Please comment in the JSON standard on the above given git diff
+(line numbers have been added for your convenience!)
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
