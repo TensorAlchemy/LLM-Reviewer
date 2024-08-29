@@ -146,10 +146,6 @@ class GithubClient:
         # Delete old comments before adding new ones
         pr_comments_left = self.delete_old_comments(pr)
 
-        # if (
-        #     len(self.llm_client.encoder.encode(changes)) < self.review_tokens
-        #     and not self.review_per_file
-        # ):
         # Review the full PR changes together
 
         prompt = self.llm_client.get_pr_prompt(changes)
@@ -179,10 +175,6 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-#                        line = max(2, int(comment["line"]))
-#                        start_line = max(1, int(comment["start_line"]))
-#                        line = max(line, start_line + 5)
-
                         lines = {
                             "line": comment["line"]
                         }
