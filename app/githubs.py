@@ -172,7 +172,7 @@ class GithubClient:
         """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
 
-        changes = number_lines_in_patch(changes)
+        changes = self.number_lines_in_patch(changes)
 
         # Delete old comments before adding new ones
         pr_comments_left = self.delete_old_comments(pr)
