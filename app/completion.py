@@ -117,6 +117,54 @@ class LLMClient:
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
 
+    def openai_query(self, prompt) -> Tuple[str, str]:
+        response = openai_client.chat.completions.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=self.temperature,
+            response_format={ "type": "json_object" }
+        )
+        content = response.choices[0].message.content
+        cost = self.calculate_cost(
+            SimpleNamespace(
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens,
+            )
+        )
+        return content, cost
+
+    def anthropic_query(self, prompt) -> Tuple[str, str]:
+        response = anthropic_client.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            system=system_prompt,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        }
+                    ]
+                }
+            ]
+        )
+        content = response.content[0].text
+        cost = self.calculate_cost(response.usage)
+        return content, cost
+
     @backoff.on_exception(
         backoff.expo,
         exceptions_to_retry,
@@ -126,53 +174,11 @@ class LLMClient:
         """Invoke LLM API to get text completion and cost"""
 
         if self.provider == Provider.OPENAI:
-            response = openai_client.chat.completions.create(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": system_prompt,
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
-                ],
-                temperature=self.temperature,
-                response_format={ "type": "json_object" }
-            )
-            content = response.choices[0].message.content
-            cost = self.calculate_cost(
-                SimpleNamespace(
-                    input_tokens=response.usage.prompt_tokens,
-                    output_tokens=response.usage.completion_tokens,
-                )
-            )
+            return self.openai_query(prompt)
         elif self.provider == Provider.ANTHROPIC:
-            response = anthropic_client.messages.create(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                system=system_prompt,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt,
-                            }
-                        ]
-                    }
-                ]
-            )
-            content = response.content[0].text
-            cost = self.calculate_cost(response.usage)
+            return self.anthropic_query(prompt)
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
-
-        return content, cost
 
     def count_tokens(self, text):
         if self.provider == Provider.OPENAI:
@@ -235,10 +241,14 @@ EXAMPLE:
 
 
 if __name__ == "__main__":
-    cli = LLMClient(model="claude-3-5-sonnet-20240620", temperature=0.2)
-    print(
-        cli.get_completion("""
+    for model in "gpt-4o-mini", "claude-3-5-sonnet-20240620":
+        cli = LLMClient(model=model, temperature=0.2)
+        prompt = cli.get_pr_prompt("""
+@@ -1,1 +1,1 @@
 -print(f"The answer is {42}")
 +print("The answer is " + 42)
 """)
-    )
+        content, cost = cli.get_completion(prompt)
+        print(model)
+        print(content)
+        print(cost)
