@@ -22,7 +22,7 @@ if os.environ.get("ANTHROPIC_API_KEY"):
 
 
 system_prompt = """
-You are expert Python developer reviewing Pull Requests. 
+You are expert Python developer reviewing Pull Requests.
 Be very concise in your reviews and highlight only important things.
 (i.e. potential bugs, security issues and critical parts in code).
 
@@ -122,7 +122,7 @@ class LLMClient:
         exceptions_to_retry,
         max_time=300,
     )
-    def get_completion(self, prompt) -> Tuple[str, str]:
+    def get_completion(self, prompt, json=False) -> Tuple[str, str]:
         """Invoke LLM API to get text completion and cost"""
 
         if self.provider == Provider.OPENAI:
@@ -140,6 +140,7 @@ class LLMClient:
                     },
                 ],
                 temperature=self.temperature,
+                response_format={ "type": "json_object" }
             )
             content = response.choices[0].message.content
             cost = self.calculate_cost(
@@ -201,7 +202,11 @@ class LLMClient:
 ```
 Please comment in the JSON standard on the above given git diff.
 
-Produce pure JSON output, without any extra symbols (like ```json etc.),
+Produce pure JSON output, without any extra symbols (like ```json etc.).
+
+Use the final line numbers, e.g. for a hunk header:
+@@ -46,77 +104,92 @@
+use line numbers starting from 104, not 46.
 
 EXAMPLE:
 {{

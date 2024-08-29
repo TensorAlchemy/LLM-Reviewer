@@ -91,7 +91,7 @@ class GithubClient:
     def get_completion(self, prompt) -> Tuple[str, str]:
         """Get the completion text and cost"""
         try:
-            completion_text, cost = self.llm_client.get_completion(prompt)
+            completion_text, cost = self.llm_client.get_completion(prompt, json=True)
             return completion_text, cost
         except Exception as e:
             if self.blocking:
@@ -176,9 +176,12 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-                        line = max(2, int(comment["line"]))
-                        start_line = max(1, int(comment["start_line"]))
-                        line = max(line, start_line + 5)
+#                        line = max(2, int(comment["line"]))
+#                        start_line = max(1, int(comment["start_line"]))
+#                        line = max(line, start_line + 5)
+
+                        line = comment["line"]
+                        start_line = comment["start_line"]
 
                         # Create comment on certain PR line
                         pr.create_review_comment(
