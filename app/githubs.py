@@ -165,6 +165,9 @@ class GithubClient:
             print(f"Exception while generating PR review: {e}")
             return False
 
+        if file_comments and pr_comment == "LGTM":
+            pr_comment = "Found some issues"
+
         # Create comment on whole PR
         pr.create_issue_comment(
             f"{pr_comment}\n\n"

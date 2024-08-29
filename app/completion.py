@@ -29,7 +29,7 @@ Be very concise in your reviews and highlight only important things.
 Please only submit a comment if the section actually requires the
 attention of a senior developer, or if you spot a bug or unused variable etc.
 
-If a change is simple and correct, just return the text "LGTM", nothing else.
+If a change has no bugs or issues, just return the text "LGTM", nothing else.
 
 You should not comment on things just because they have changed, you should
 comment about logical errors in the codebase or things which could
