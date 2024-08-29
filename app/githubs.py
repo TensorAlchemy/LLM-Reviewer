@@ -139,9 +139,40 @@ class GithubClient:
                 except Exception as e:
                     print(f"failed to delete review comment {e}")
 
+    def number_lines_in_patch(self, changes):
+        lines = changes.split("\n")
+        out = []
+        n = None
+        in_hunk = False
+        for l in lines:
+            if in_hunk and not re.match(r'[ +-]', l):
+                in_hunk = False
+                n = None
+            if in_hunk and not l.startswith("-"):
+                n += 1
+            if n and l.startswith("-"):
+                l = f"\t{l}"
+            elif n:
+                l = f"{n}\t{l}"
+            if l.startswith("@@"):
+                in_hunk = True
+                m = re.match(r'@@ -\d+,\d+ \+(\d+),\d+ @@', l)
+                if not m:
+                    raise ValueError(f"Invalid hunk header: {l}")
+                n = int(m[1]) - 1
+            out.append(l)
+
+        out.append("")
+
+        numbered = "\n".join(out)
+
+        return numbered
+
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
+
+        changes = self.number_lines_in_patch(changes)
 
         # Delete old comments before adding new ones
         pr_comments_left = self.delete_old_comments(pr)
@@ -158,7 +189,7 @@ class GithubClient:
             file_comments = review_json.get("file_comments", [])
             print(f"file_comments={file_comments}")
         except Exception as e:
-            print(f"Exception while generating PR review: {e}")
+            print(f"Exception while generating PR review: {e}\n{traceback.format_exc()}")
             return False
 
         if file_comments and pr_comment == "LGTM":
