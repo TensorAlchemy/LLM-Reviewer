@@ -204,9 +204,7 @@ Please comment in the JSON standard on the above given git diff.
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
-Use the final line numbers, e.g. for a hunk header:
-@@ -46,77 +104,92 @@
-use line numbers starting from 104, not 46.
+Use line numbers of the diff itself, not the whole file.
 
 EXAMPLE:
 {{
@@ -215,7 +213,7 @@ EXAMPLE:
       {{
         "file": "path/somefile.py",
         "start_line": 198, <-- Must be <= line
-        "line": 200, <-- Should be the exact line you wish to specify
+        "line": 200, <-- Should be the final line
         "comment": "somecomment", <-- Should be compact and helpful
       }},
       ...
