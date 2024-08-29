@@ -1,4 +1,4 @@
-name: "ChatGPT Reviewer"
+name: "LLM Reviewer"
 author: "Pengfei Ni"
 description: "Automated pull requests reviewing and issues triaging with ChatGPT"
 inputs:
@@ -7,16 +7,19 @@ inputs:
     required: true
   OPENAI_API_KEY:
     description: "API key used to invoke OpenAI"
-    required: true
+    required: false
   OPENAI_API_BASE:
     description: "API based used to access [Azure] OpenAI API"
     required: false
+  ANTHROPIC_API_KEY:
+    description: "API key used to invoke Anthropic Claude"
+    required: false
   model:
-    description: "OpenAI model name"
-    default: "gpt-4o"
+    description: "LLM model name"
+    default: "claude-3-5-sonnet-20240620"
     required: false
   blocking:
-    description: "Blocking the pull requests on OpenAI failures"
+    description: "Blocking the pull requests on LLM failures"
     default: 'False'
     required: false
   temperature:

@@ -1,33 +1,39 @@
-# ChatGPT-Reviewer
+# LLM-Reviewer
 
-Automated pull requests reviewing and issues triaging with ChatGPT.
+Automated pull requests reviewing and issues triaging with an LLM.
 
 ## How to use
 
-Create an OpenAI API key [here](https://platform.openai.com/account/api-keys), and then set the key as an [action secret in your repository](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `OPENAI_API_KEY`.
+You need at one or more LLM API keys:
+
+- Create an OpenAI API key [here](https://platform.openai.com/account/api-keys).
+- Create an Anthropic API key [here](https://console.anthropic.com/settings/keys).
+
+Set the keys as [action secrets in your repository](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
 
 Finally, create a file named `.github/workflows/chatgpt-review.yml` with the following contents:
 
 ```yaml
-name: ChatGPT Review
+name: LLM Review
 
 on: [pull_request]
 
 
 jobs:
-  chatgpt-review:
-    name: ChatGPT Review
+  llm-review:
+    name: LLM Review
     runs-on: ubuntu-latest
     steps:
-    - uses: feiskyer/ChatGPT-Reviewer@v0
-      name: ChatGPT Review
+    - uses: TensorAlchemy/LLM-Reviewer@main
+      name: LLM Review
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         # OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
       # Optional configurations:
       # with:
-      #   model: "gpt-3.5-turbo"
+      #   model: "gpt-4o"
       #   temperature: 0.2
       #   review_per_file: true
       #   comment_per_file: true
@@ -38,17 +44,18 @@ jobs:
 |Parameter|Description|Required|Default|
 |---------|-----------|--------|-------|
 |GITHUB_TOKEN|Github token used to send out review comments|true|""|
-|OPENAI_API_KEY|API key used to invoke OpenAI|true|""|
+|OPENAI_API_KEY|API key used to invoke OpenAI|false|""|
+|ANTHROPIC_API_KEY|API key used to invoke Anthropic|false|""|
 |OPENAI_API_BASE|API based used to access Azure OpenAI|false|""|
-|blocking|Blocking the pull requests on OpenAI failures|false|False|
-|model|OpenAI model name|false|gpt-4o|
+|blocking|Blocking the pull requests on LLM failures|false|False|
+|model|LLM model name|false|claude-3-5-sonnet-20240620|
 |temperature|Temperature for the model|false|0.2|
 |review_per_file|Send out review requests per file|false|Large changes would be reviewed per file automatically|
 |comment_per_file|Post review comments per file|false|True
 
 ## Samples
 
-The ChatGPT reviewer PRs are also getting reviewed by ChatGPT, refer the [pull requests](https://github.com/feiskyer/ChatGPT-Reviewer/pulls?q=is%3Apr) for the sample review comments.
+The original ChatGPT reviewer PRs are also getting reviewed by ChatGPT, refer the [pull requests](https://github.com/feiskyer/ChatGPT-Reviewer/pulls?q=is%3Apr) for the sample review comments.
 
 ## Special notes for public repository forks
 
