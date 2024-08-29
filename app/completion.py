@@ -215,18 +215,18 @@ Use the line numbers in the patched code, e.g. for a hunk header:
 use the line numbers starting from 104, not 46.
 
 EXAMPLE:
-{{
+{
   "pr_comment": "A short comment on the entire PR (should be compact)",
   "file_comments" : [
-      {{
+      {
         "file": "path/somefile.py",
         "start_line": 198, <-- Must be <= line
         "line": 200, <-- Should be the final line
         "comment": "somecomment", <-- Should be compact and helpful
-      }},
+      },
       ...
   ]
-}}
+}
     """
         return prompt
 
