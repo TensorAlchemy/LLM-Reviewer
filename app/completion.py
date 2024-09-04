@@ -43,6 +43,7 @@ YOU MUST NOT MENTION CHECKING CONFIGURATION. Assume a senior developer.
 YOU MUST NOT MENTION CHECKING VARIABLE REFERENCES!
 """
 
+
 class Provider(Enum):
     OPENAI = 1
     ANTHROPIC = 2
@@ -52,27 +53,27 @@ class LLMClient:
     """LLM API client"""
 
     models = {
-# commented out obsolete models:
-#        "gpt-3.5-turbo-1106": {
-#            "input_price": 1,
-#            "output_price": 2,
-#            "provider": Provider.OPENAI,
-#        },
-#        "gpt-4-1106-preview": {
-#            "input_price": 10,
-#            "output_price": 30,
-#            "provider": Provider.OPENAI,
-#        },
-#        "gpt-4-0125-preview": {
-#            "input_price": 10,
-#            "output_price": 30,
-#            "provider": Provider.OPENAI,
-#        },
-#        "gpt-4": {
-#            "input_price": 10,
-#            "output_price": 60,
-#            "provider": Provider.OPENAI,
-#        },
+        # commented out obsolete models:
+        #        "gpt-3.5-turbo-1106": {
+        #            "input_price": 1,
+        #            "output_price": 2,
+        #            "provider": Provider.OPENAI,
+        #        },
+        #        "gpt-4-1106-preview": {
+        #            "input_price": 10,
+        #            "output_price": 30,
+        #            "provider": Provider.OPENAI,
+        #        },
+        #        "gpt-4-0125-preview": {
+        #            "input_price": 10,
+        #            "output_price": 30,
+        #            "provider": Provider.OPENAI,
+        #        },
+        #        "gpt-4": {
+        #            "input_price": 10,
+        #            "output_price": 60,
+        #            "provider": Provider.OPENAI,
+        #        },
         "gpt-4o": {
             "input_price": 5,
             "output_price": 15,
@@ -90,8 +91,14 @@ class LLMClient:
         },
     }
 
-    exceptions_to_retry = (openai.RateLimitError, openai.APIConnectionError, openai.InternalServerError,
-         anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.InternalServerError)
+    exceptions_to_retry = (
+        openai.RateLimitError,
+        openai.APIConnectionError,
+        openai.InternalServerError,
+        anthropic.RateLimitError,
+        anthropic.APIConnectionError,
+        anthropic.InternalServerError,
+    )
 
     def __init__(
         self,
@@ -132,7 +139,7 @@ class LLMClient:
                 },
             ],
             temperature=self.temperature,
-            response_format={ "type": "json_object" }
+            response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content
         cost = self.calculate_cost(
@@ -157,9 +164,9 @@ class LLMClient:
                             "type": "text",
                             "text": prompt,
                         }
-                    ]
+                    ],
                 }
-            ]
+            ],
         )
         content = response.content[0].text
         cost = self.calculate_cost(response.usage)
@@ -244,11 +251,13 @@ EXAMPLE:
 if __name__ == "__main__":
     for model in "gpt-4o-mini", "claude-3-5-sonnet-20240620":
         cli = LLMClient(model=model, temperature=0.2)
-        prompt = cli.get_pr_prompt("""
+        prompt = cli.get_pr_prompt(
+            """
 @@ -1,1 +1,1 @@
 -print(f"The answer is {42}")
 +print("The answer is " + 42)
-""")
+"""
+        )
         content, cost = cli.get_completion(prompt)
         print(model)
         print(content)

@@ -3,13 +3,13 @@
 #
 import json
 import os
-import re
 import traceback
 from typing import Tuple
 
 import requests
 from github import Github
 
+import numbered_patch
 
 # List of event types
 EVENT_TYPE_PUSH = "push"
@@ -137,47 +137,11 @@ class GithubClient:
                 except Exception as e:
                     print(f"failed to delete review comment {e}")
 
-    def number_lines_in_patch(self, changes):
-        lines = changes.split("\n")
-        numbered_lines = []
-        current_line_number = None
-        in_hunk = False
-
-        for line in lines:
-            if in_hunk and self.is_end_of_hunk(line):
-                in_hunk = False
-                current_line_number = None
-
-            if in_hunk:
-                if line.startswith("-"):
-                    numbered_lines.append(f"\t{line}")
-                else:
-                    if not line.startswith("+"):
-                        current_line_number += 1
-                    numbered_lines.append(f"{current_line_number}\t{line}")
-            else:
-                if line.startswith("@@"):
-                    in_hunk = True
-                    current_line_number = self.parse_hunk_header(line)
-                numbered_lines.append(line)
-
-        numbered_lines.append("")
-        return "\n".join(numbered_lines)
-
-    def parse_hunk_header(self, header):
-        match = re.match(r"@@ -\d+,\d+ \+(\d+),\d+ @@", header)
-        if not match:
-            raise ValueError(f"Invalid hunk header: {header}")
-        return int(match.group(1)) - 1
-
-    def is_end_of_hunk(self, line):
-        return not re.match(r"[ +-]", line)
-
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
 
-        changes = self.number_lines_in_patch(changes)
+        changes = numbered_patch.number_lines_in_patch(changes)
 
         # Delete old comments before adding new ones
         pr_comments_left = self.delete_old_comments(pr)
