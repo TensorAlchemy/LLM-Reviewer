@@ -12,7 +12,7 @@ jobs:
       pull-requests: write
     steps:
       - name: LLM PR Review
-        uses: TensorAlchemy/LLM-Reviewer@fix/numbered-patch
+        uses: TensorAlchemy/LLM-Reviewer@${{ github.event.pull_request.head.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
