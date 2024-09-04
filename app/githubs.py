@@ -31,9 +31,7 @@ class GithubClient:
         self.llm_client = llm_client
         self.github_token = os.getenv("GITHUB_TOKEN")
         self.github_client = Github(self.github_token)
-        self.review_tokens = (
-            self.llm_client.max_tokens - self.llm_client.min_tokens
-        )
+        self.review_tokens = self.llm_client.max_tokens - self.llm_client.min_tokens
         self.review_per_file = review_per_file
         self.comment_per_file = comment_per_file
         self.blocking = blocking
@@ -141,32 +139,39 @@ class GithubClient:
 
     def number_lines_in_patch(self, changes):
         lines = changes.split("\n")
-        out = []
-        n = None
+        numbered_lines = []
+        current_line_number = None
         in_hunk = False
-        for l in lines:
-            if in_hunk and not re.match(r'[ +-]', l):
+
+        for line in lines:
+            if in_hunk and self.is_end_of_hunk(line):
                 in_hunk = False
-                n = None
-            if in_hunk and not l.startswith("-"):
-                n += 1
-            if n and l.startswith("-"):
-                l = f"\t{l}"
-            elif n:
-                l = f"{n}\t{l}"
-            if l.startswith("@@"):
-                in_hunk = True
-                m = re.match(r'@@ -\d+,\d+ \+(\d+),\d+ @@', l)
-                if not m:
-                    raise ValueError(f"Invalid hunk header: {l}")
-                n = int(m[1]) - 1
-            out.append(l)
+                current_line_number = None
 
-        out.append("")
+            if in_hunk:
+                if line.startswith("-"):
+                    numbered_lines.append(f"\t{line}")
+                else:
+                    if not line.startswith("+"):
+                        current_line_number += 1
+                    numbered_lines.append(f"{current_line_number}\t{line}")
+            else:
+                if line.startswith("@@"):
+                    in_hunk = True
+                    current_line_number = self.parse_hunk_header(line)
+                numbered_lines.append(line)
 
-        numbered = "\n".join(out)
+        numbered_lines.append("")
+        return "\n".join(numbered_lines)
 
-        return numbered
+    def parse_hunk_header(self, header):
+        match = re.match(r"@@ -\d+,\d+ \+(\d+),\d+ @@", header)
+        if not match:
+            raise ValueError(f"Invalid hunk header: {header}")
+        return int(match.group(1)) - 1
+
+    def is_end_of_hunk(self, line):
+        return not re.match(r"[ +-]", line)
 
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
@@ -189,7 +194,9 @@ class GithubClient:
             file_comments = review_json.get("file_comments", [])
             print(f"file_comments={file_comments}")
         except Exception as e:
-            print(f"Exception while generating PR review: {e}\n{traceback.format_exc()}")
+            print(
+                f"Exception while generating PR review: {e}\n{traceback.format_exc()}"
+            )
             return False
 
         if file_comments and pr_comment == "LGTM":
@@ -206,9 +213,7 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-                        lines = {
-                            "line": comment["line"]
-                        }
+                        lines = {"line": comment["line"]}
                         if comment["start_line"] != comment["line"]:
                             lines["start_line"] = comment["start_line"]
 
