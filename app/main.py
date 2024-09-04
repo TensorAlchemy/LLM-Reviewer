@@ -23,7 +23,9 @@ if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
 parser = argparse.ArgumentParser(
     description="Automated pull requests reviewing and issues triaging with an LLM"
 )
-parser.add_argument("--model", help="LLM model", type=str, default="claude-3-5-sonnet-20240620")
+parser.add_argument(
+    "--model", help="LLM model", type=str, default="claude-3-5-sonnet-20240620"
+)
 parser.add_argument(
     "--temperature", help="Temperature for the model", type=float, default=0.2
 )

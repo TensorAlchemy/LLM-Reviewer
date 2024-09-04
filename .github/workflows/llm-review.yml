@@ -11,8 +11,13 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Checkout PR
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - name: LLM PR Review
-        uses: TensorAlchemy/LLM-Reviewer@main
+        uses: ./
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
