@@ -11,6 +11,7 @@ import openai
 import anthropic
 import tiktoken
 
+from loguru import logger
 from openai import OpenAI
 from anthropic import Anthropic
 
@@ -207,20 +208,30 @@ class LLMClient:
 
         return total_cost
 
-    def get_pr_prompt(self, changes) -> str:
-        """Generate a prompt for a PR review to give JSON output with line and comments"""
+    def get_pr_prompt(self, changes: str) -> str:
+        """
+        Generate a prompt for a PR review
+        to give JSON output with line and comments
+        """
         prompt = f"""Here are changes for this PR:
 ```
 {changes}
 ```
 Please comment in the JSON standard on the above given git diff
-(line numbers have been added for your convenience!)
+**line numbers have been added, please use them to format your response**
+
+Please only comment when you are sure there is a present bug or style inconsistency.
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
-Use the line numbers in the patched code, e.g. for a hunk header:
-@@ -46,77 +104,92 @@
-use the line numbers starting from 104, not 46.
+If given two lines next to each other with `-` first and `+` later,
+that means a replacement. Apply your attention to the new code.
+
+Each comment must include:
+ - start_line
+ - line
+ - comment
+ - file
 
 EXAMPLE:
 {{
@@ -259,6 +270,6 @@ if __name__ == "__main__":
 """
         )
         content, cost = cli.get_completion(prompt)
-        print(model)
-        print(content)
-        print(cost)
+        logger.info(model)
+        logger.info(content)
+        logger.info(cost)
