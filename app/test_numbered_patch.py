@@ -7,7 +7,7 @@ def compare_results(expected_output: str, actual_output: str, error: str) -> Non
     split_actual: List[str] = actual_output.split("\n")
     split_expected: List[str] = expected_output.split("\n")
 
-    to_iter: int = min(len(split_actual), len(split_expected))
+    to_iter: int = len(split_actual)
 
     for idx in range(to_iter):
         assert split_expected[idx] == split_actual[idx], error

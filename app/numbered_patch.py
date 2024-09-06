@@ -35,7 +35,7 @@ def process_hunk_header(
     numbered_lines = remove_last_if_empty_or_numeric(lines)
     numbered_lines.append(line)
 
-    if len(lines) < 1:
+    if not lines:
         return current_line_number, numbered_lines
 
     return current_line_number, numbered_lines
