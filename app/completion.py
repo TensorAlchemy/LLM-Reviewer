@@ -224,6 +224,12 @@ Please only comment when you are sure there is a present bug or style inconsiste
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
+Each comment must include:
+ - start_line
+ - line
+ - comment
+ - file
+
 EXAMPLE:
 {{
   "pr_comment": "A short comment on the entire PR (should be compact)",
