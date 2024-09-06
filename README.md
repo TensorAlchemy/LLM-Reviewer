@@ -11,7 +11,7 @@ You need at one or more LLM API keys:
 
 Set the keys as [action secrets in your repository](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
 
-Finally, create a file named `.github/workflows/chatgpt-review.yml` with the following contents:
+Finally, create a file named `.github/workflows/llm-review.yml` with the following contents:
 
 ```yaml
 name: LLM Review

@@ -209,19 +209,20 @@ class LLMClient:
         return total_cost
 
     def get_pr_prompt(self, changes: str) -> str:
-        """Generate a prompt for a PR review to give JSON output with line and comments"""
+        """
+        Generate a prompt for a PR review
+        to give JSON output with line and comments
+        """
         prompt = f"""Here are changes for this PR:
 ```
 {changes}
 ```
 Please comment in the JSON standard on the above given git diff
-(line numbers have been added for your convenience!)
+**line numbers have been added, please use them to format your response**
+
+Please only comment when you are sure there is a present bug or style inconsistency.
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
-
-Use the line numbers in the patched code, e.g. for a hunk header:
-@@ -46,77 +104,92 @@
-use the line numbers starting from 104, not 46.
 
 EXAMPLE:
 {{

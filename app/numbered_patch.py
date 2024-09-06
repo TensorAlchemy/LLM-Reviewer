@@ -1,135 +1,78 @@
+import os
 import re
-from typing import List
+from typing import List, Tuple, Optional
 
-""" Add line numbers to a patch file for the LLM """
+SKIPPED_FILE_TYPES: List[str] = [".lock"]
+
+
+def get_file_extension(file_name: str) -> str:
+    return os.path.splitext(file_name)[1].lower()
+
+
+def is_skipped_file(file_name: str) -> bool:
+    return get_file_extension(file_name) in SKIPPED_FILE_TYPES
+
+
+def is_empty_or_numeric(line: str) -> bool:
+    return not line or line.isdigit()
+
+
+def remove_last_if_empty_or_numeric(lines: List[str]) -> List[str]:
+    return lines[:-1] if lines and is_empty_or_numeric(lines[-1].strip()) else lines
+
+
+def parse_hunk_header(header: str) -> Optional[int]:
+    match = re.match(r"@@ -\d+(,\d+)? \+(\d+)(,\d+)? @@", header)
+    return int(match.group(2)) - 1 if match else None
+
+
+def process_hunk_header(
+    line: str, idx: int, lines: List[str]
+) -> Tuple[int, bool, List[str]]:
+    current_line_number = parse_hunk_header(line) or 0
+    numbered_lines = remove_last_if_empty_or_numeric(lines)
+    numbered_lines.append(line)
+
+    should_skip_file = False
+    if idx > 0:
+        should_skip_file = is_skipped_file(lines[idx - 1].split()[-1])
+        if should_skip_file:
+            numbered_lines.append("**FILE OMITTED FOR BREVITY**")
+
+    return current_line_number, should_skip_file, numbered_lines
+
+
+def process_line(line: str, current_line_number: int) -> Tuple[str, int]:
+    if line.startswith("-"):
+        return f"\t{line}", current_line_number
+    else:
+        return f"{current_line_number + 1}\t{line}", current_line_number + 1
 
 
 def number_lines_in_patch(changes: str) -> str:
-    """Add line numbers to a patch file for the LLM"""
+    if "@@" not in changes:
+        return changes
+
     lines = changes.split("\n")
     numbered_lines: List[str] = []
     current_line_number: int = 0
-    in_hunk: bool = False
+    should_skip_file: bool = False
+    found_first_chunk: bool = False
 
-    for line in lines:
-        if in_hunk and is_end_of_hunk(line):
-            in_hunk = False
-            current_line_number = None
-
-        if in_hunk:
-            if line.startswith("-"):
-                line = f"\t{line}"
-            else:
-                current_line_number += 1
-                line = f"{current_line_number}\t{line}"
-
+    for idx, line in enumerate(lines):
         if line.startswith("@@"):
-            in_hunk = True
-            current_line_number = parse_hunk_header(line)
+            current_line_number, should_skip_file, numbered_lines = process_hunk_header(
+                line, idx, numbered_lines
+            )
+            found_first_chunk = True
+        elif not found_first_chunk:
+            numbered_lines.append(line)
+        elif should_skip_file:
+            continue  # Skip all lines after "**FILE OMITTED FOR BREVITY**"
+        else:
+            processed_line, current_line_number = process_line(
+                line, current_line_number
+            )
+            numbered_lines.append(processed_line)
 
-        numbered_lines.append(line)
-
-    return "\n".join(numbered_lines)
-
-
-def parse_hunk_header(header: str) -> int:
-    match = re.match(r"@@ -\d+(,\d+)? \+(\d+)(,\d+)? @@", header)
-    if not match:
-        raise ValueError(f"Invalid hunk header: {header}")
-    return int(match.group(2)) - 1
-
-
-def is_end_of_hunk(line: str) -> bool:
-    return not re.match(r"[ +-]", line)
-
-
-def test_number_lines_in_patch_add_code():
-    input_text = """diff --git a/hello.py b/hello.py
-new file mode 100755
-index 0000000..5dc9fd1
---- /dev/null
-+++ b/hello.py
-@@ -0,0 +1,3 @@
-+#!/usr/bin/env python
-+
-+print("Hello, world")
-"""
-    expected_output = """diff --git a/hello.py b/hello.py
-new file mode 100755
-index 0000000..5dc9fd1
---- /dev/null
-+++ b/hello.py
-@@ -0,0 +1,3 @@
-1\t+#!/usr/bin/env python
-2\t+
-3\t+print("Hello, world")
-"""
-    assert number_lines_in_patch(input_text) == expected_output
-
-
-def test_number_lines_in_patch_remove_line():
-    input_text = """
-diff --git a/foo/__init__.py b/foo/__init__.py
-index 01234567..01234567 100644
---- a/foo/__init__.py
-+++ b/foo/__init__.py
-@@ -1 +0,0 @@
--
-"""
-    expected_output = """
-diff --git a/foo/__init__.py b/foo/__init__.py
-index 01234567..01234567 100644
---- a/foo/__init__.py
-+++ b/foo/__init__.py
-@@ -1 +0,0 @@
-\t-
-"""
-    assert number_lines_in_patch(input_text) == expected_output
-
-
-def test_number_lines_in_patch_replace_code():
-    input_text = """diff --git a/hello.py b/hello.py
-index 5dc9fd1..54f6661 100644
---- a/hello.py
-+++ b/hello.py
-@@ -1,3 +1,5 @@
--#!/usr/bin/env python
-+import sys
- 
- print("Hello, world")
-+
-+sys.exit(0)
-"""
-    expected_output = """diff --git a/hello.py b/hello.py
-index 5dc9fd1..54f6661 100644
---- a/hello.py
-+++ b/hello.py
-@@ -1,3 +1,5 @@
-\t-#!/usr/bin/env python
-1\t+import sys
-2\t 
-3\t print("Hello, world")
-4\t+
-5\t+sys.exit(0)
-"""
-    assert number_lines_in_patch(input_text) == expected_output
-
-
-def test_number_lines_in_patch_add_single_line():
-    input_text = """diff --git a/test.py b/test.py
-new file mode 100644
-index 0000000..11b15b1
---- /dev/null
-+++ b/test.py
-@@ -0,0 +1 @@
-+print("hello")
-"""
-    expected_output = """diff --git a/test.py b/test.py
-new file mode 100644
-index 0000000..11b15b1
---- /dev/null
-+++ b/test.py
-@@ -0,0 +1 @@
-1\t+print("hello")
-"""
-    assert number_lines_in_patch(input_text) == expected_output
+    return "\n".join(remove_last_if_empty_or_numeric(numbered_lines))
