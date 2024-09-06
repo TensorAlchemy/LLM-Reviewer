@@ -159,8 +159,9 @@ class GithubClient:
             for comment in file_comments:
                 if file.filename == comment["file"]:
                     try:
-                        lines = {"line": comment["line"]}
-                        if comment["start_line"] != comment["line"]:
+                        line_no: int = comment["line"]
+                        lines = {"line": line_no}
+                        if comment["start_line"] != line_no:
                             lines["start_line"] = comment["start_line"]
 
                         # Create comment on certain PR line
@@ -195,7 +196,9 @@ class GithubClient:
                             continue
 
                         logger.error(
-                            f"failed to comment on file={file.filename}:{line}: {e}"
+                            #
+                            "failed to comment on "
+                            + f"file={file.filename}:{line_no}: {e}"
                         )
                         continue
 

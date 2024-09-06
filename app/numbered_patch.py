@@ -61,7 +61,6 @@ def number_lines_in_patch(changes: str) -> str:
     for line in lines:
         if line.startswith("@@"):
             if len(numbered_lines) > 0:
-                print(numbered_lines[-1])
                 should_skip_file = is_skipped_file(numbered_lines[-1])
                 if should_skip_file:
                     numbered_lines.append(line)
