@@ -30,7 +30,7 @@ def parse_hunk_header(header: str) -> Optional[int]:
 def process_hunk_header(
     line: str,
     lines: List[str],
-) -> Tuple[int, bool, List[str]]:
+) -> Tuple[int, List[str]]:
     current_line_number = parse_hunk_header(line) or 0
     numbered_lines = remove_last_if_empty_or_numeric(lines)
     numbered_lines.append(line)

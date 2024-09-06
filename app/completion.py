@@ -224,6 +224,9 @@ Please only comment when you are sure there is a present bug or style inconsiste
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
+If given two lines next to each other with `-` first and `+` later,
+that means a replacement. Apply your attention to the new code.
+
 Each comment must include:
  - start_line
  - line

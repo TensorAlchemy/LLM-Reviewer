@@ -161,6 +161,7 @@ class GithubClient:
                     try:
                         line_no: int = comment["line"]
                         lines = {"line": line_no}
+
                         if comment["start_line"] != line_no:
                             lines["start_line"] = comment["start_line"]
 
