@@ -11,6 +11,7 @@ import openai
 import anthropic
 import tiktoken
 
+from loguru import logger
 from openai import OpenAI
 from anthropic import Anthropic
 
@@ -207,7 +208,7 @@ class LLMClient:
 
         return total_cost
 
-    def get_pr_prompt(self, changes) -> str:
+    def get_pr_prompt(self, changes: str) -> str:
         """Generate a prompt for a PR review to give JSON output with line and comments"""
         prompt = f"""Here are changes for this PR:
 ```
@@ -259,6 +260,6 @@ if __name__ == "__main__":
 """
         )
         content, cost = cli.get_completion(prompt)
-        print(model)
-        print(content)
-        print(cost)
+        logger.info(model)
+        logger.info(content)
+        logger.info(cost)

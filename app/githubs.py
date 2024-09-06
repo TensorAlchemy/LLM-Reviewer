@@ -6,6 +6,8 @@ import os
 import traceback
 from typing import Tuple
 
+from loguru import logger
+
 import requests
 from github import Github
 
@@ -53,6 +55,7 @@ class GithubClient:
         """Get the pull request"""
         repo = self.github_client.get_repo(os.getenv("GITHUB_REPOSITORY"))
         pr = repo.get_pull(payload.get("number"))
+
         changes = requests.get(
             pr.url,
             timeout=30,
@@ -61,30 +64,8 @@ class GithubClient:
                 "Accept": "application/vnd.github.v3.diff",
             },
         ).text
+
         return pr, changes
-
-    def cut_changes(self, previous_filename, filename, patch):
-        """Cut the changes to fit the max tokens"""
-        if previous_filename is None:
-            previous_filename = filename
-
-        # add a patch header
-        patch = f"diff --git a/{previous_filename} b/{filename}\n{patch}"
-        if self.llm_client.count_tokens(patch) < self.review_tokens:
-            return patch
-
-        # TODO: it is not a good idea to cut the contents, need figure out a better way
-        lines = patch.splitlines()
-        print(
-            f"The changes for {filename} is too long, contents would be cut to fit the max tokens"
-        )
-        i = len(lines)
-        while i > 0:
-            i -= 1
-            line = "\n".join(lines[:i])
-            if self.llm_client.count_tokens(line) < self.review_tokens:
-                return line
-        return ""
 
     def get_completion(self, prompt) -> Tuple[str, str]:
         """Get the completion text and cost"""
@@ -95,19 +76,21 @@ class GithubClient:
             if self.blocking:
                 raise e
             else:
-                print(
-                    f"The LLM failed on prompt with exception: {e}\n{traceback.format_exc()}"
+                logger.error(
+                    f"The LLM failed on prompt with exception: {e}\n"
+                    + traceback.format_exc()
                 )
                 return ""
 
-    def delete_old_comments(self, pr, attempt=1):
+    def delete_old_comments(self, pr, attempt: int = 1) -> None:
         """Delete old comments on the PR created by the bot"""
 
-        # Comments API returning paged data, so need to iterate few times to make sure
+        # Comments API returning paged data,
+        # so need to iterate few times to make sure
         # that all comments are deleted
         max_num_of_delete_steps = 16
         for i in range(max_num_of_delete_steps):
-            print(f"Deleting old comments [{i}]")
+            logger.info(f"Deleting old comments [{i}]")
             # Integration has no permission to get_user
             # github_action_bot_username = self.github_client.get_user().login
             comments = list(pr.get_issue_comments())
@@ -119,7 +102,7 @@ class GithubClient:
                 try:
                     comment.delete()
                 except Exception as e:
-                    print(f"failed to delete issue comment {e}")
+                    logger.error(f"failed to delete issue comment {e}")
 
             review_comments = list(pr.get_review_comments())
 
@@ -135,7 +118,7 @@ class GithubClient:
                 try:
                     comment.delete()
                 except Exception as e:
-                    print(f"failed to delete review comment {e}")
+                    logger.error(f"failed to delete review comment {e}")
 
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
@@ -144,21 +127,20 @@ class GithubClient:
         changes = numbered_patch.number_lines_in_patch(changes)
 
         # Delete old comments before adding new ones
-        pr_comments_left = self.delete_old_comments(pr)
+        self.delete_old_comments(pr)
 
         # Review the full PR changes together
-
         prompt = self.llm_client.get_pr_prompt(changes)
         review_json_str, cost = self.get_completion(prompt)
-        print(f"review_json={review_json_str}")
+        logger.info(f"review_json={review_json_str}")
         try:
             review_json = json.loads(review_json_str)
             pr_comment = review_json["pr_comment"]
-            print(f"pr_comment={pr_comment}")
+            logger.info(f"pr_comment={pr_comment}")
             file_comments = review_json.get("file_comments", [])
-            print(f"file_comments={file_comments}")
+            logger.info(f"file_comments={file_comments}")
         except Exception as e:
-            print(
+            logger.error(
                 f"Exception while generating PR review: {e}\n{traceback.format_exc()}"
             )
             return False
@@ -193,7 +175,9 @@ class GithubClient:
                             "start_line must be part of the same hunk as the line."
                             in str(e)
                         ):
-                            print(f"not using start_line because of issue: {e}")
+                            logger.warning(
+                                f"not using start_line because of issue: {e}"
+                            )
 
                             try:
                                 pr.create_review_comment(
@@ -206,11 +190,13 @@ class GithubClient:
                                     line=1,
                                 )
                             except Exception:
-                                print("Just skipping the error")
+                                logger.warning("Just skipping the error")
 
                             continue
 
-                        print(f"failed to comment on file={file.filename}:{line}: {e}")
+                        logger.error(
+                            f"failed to comment on file={file.filename}:{line}: {e}"
+                        )
                         continue
 
         return True

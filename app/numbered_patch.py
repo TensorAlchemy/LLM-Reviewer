@@ -1,4 +1,5 @@
 import re
+from typing import List
 
 """ Add line numbers to a patch file for the LLM """
 
@@ -6,9 +7,9 @@ import re
 def number_lines_in_patch(changes: str) -> str:
     """Add line numbers to a patch file for the LLM"""
     lines = changes.split("\n")
-    numbered_lines = []
-    current_line_number = None
-    in_hunk = False
+    numbered_lines: List[str] = []
+    current_line_number: int = 0
+    in_hunk: bool = False
 
     for line in lines:
         if in_hunk and is_end_of_hunk(line):
@@ -25,6 +26,7 @@ def number_lines_in_patch(changes: str) -> str:
         if line.startswith("@@"):
             in_hunk = True
             current_line_number = parse_hunk_header(line)
+
         numbered_lines.append(line)
 
     return "\n".join(numbered_lines)
@@ -37,7 +39,7 @@ def parse_hunk_header(header: str) -> int:
     return int(match.group(2)) - 1
 
 
-def is_end_of_hunk(line: str) -> None:
+def is_end_of_hunk(line: str) -> bool:
     return not re.match(r"[ +-]", line)
 
 
