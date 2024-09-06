@@ -23,6 +23,10 @@ def is_empty_or_numeric(line: str) -> bool:
     return not line or line.isdigit()
 
 
+def is_file_name(line: str) -> bool:
+    return line.startswith("---") or line.startswith("+++")
+
+
 def remove_last_if_empty_or_numeric(lines: List[str]) -> List[str]:
     return lines[:-1] if lines and is_empty_or_numeric(lines[-1].strip()) else lines
 
@@ -64,18 +68,21 @@ def number_lines_in_patch(changes: str) -> str:
     found_first_chunk: bool = False
 
     for line in lines:
+        if is_file_name(line):
+            numbered_lines.append(line)
+            should_skip_file = is_skipped_file(line)
+            continue
+
         if line.startswith("@@"):
-            if len(numbered_lines) > 0:
-                should_skip_file = is_skipped_file(numbered_lines[-1])
-                if should_skip_file:
-                    numbered_lines.append(line)
-                    numbered_lines.append(OMITTED_BREVITY_TEXT)
-                    continue
+            found_first_chunk = True
 
             current_line_number, numbered_lines = process_hunk_header(
                 line, numbered_lines
             )
-            found_first_chunk = True
+
+            if should_skip_file:
+                numbered_lines.append(OMITTED_BREVITY_TEXT)
+                continue
 
         elif should_skip_file:
             continue  # Skip all lines after "**FILE OMITTED FOR BREVITY**"

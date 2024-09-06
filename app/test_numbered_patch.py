@@ -122,25 +122,42 @@ index 0000000..11b15b1
 
 
 def test_no_lock_files():
-    input_text = """diff --git a/package.lock b/package.lock
+    input_text = """diff --git a/package-lock.json b/package-lock.json
 index 5dc9fd1..54f6661 100644
---- a/package.lock
-+++ b/package.lock
+--- a/hello.py
++++ b/hello.py
 @@ -1,3 +1,5 @@
 -#!/usr/bin/env python
-+import sys
-
- print("Hello, world")
-+
-+sys.exit(0)
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,3 +1,5 @@
+    SOME REALLY
+    REALLY REALLY
+    REALLY REALLY
+    REALLY REALLY
+    REALLY REALLY
+-   REALLY REALLY
+    REALLY REALLY
++   LONG STRING
+--- /dev/null
++++ b/test.py
+@@ -0,0 +1 @@
 """
-    expected_output = """diff --git a/package.lock b/package.lock
+    expected_output = """diff --git a/package-lock.json b/package-lock.json
 index 5dc9fd1..54f6661 100644
---- a/package.lock
-+++ b/package.lock
+--- a/hello.py
++++ b/hello.py
+@@ -1,3 +1,5 @@
+\t-#!/usr/bin/env python
+--- a/package-lock.json
++++ b/package-lock.json
 @@ -1,3 +1,5 @@
 **FILE OMITTED FOR BREVITY**
+--- /dev/null
++++ b/test.py
+@@ -0,0 +1 @@
 """
+    print(number_lines_in_patch(input_text))
     compare_results(
         expected_output,
         number_lines_in_patch(input_text),
