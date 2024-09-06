@@ -1,8 +1,12 @@
 import os
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Pattern
 
-SKIPPED_FILE_TYPES: List[str] = [".lock"]
+# File patterns that should be skipped when processing patches
+SKIPPED_FILE_PATTERNS: List[Pattern] = [
+    re.compile(r"\.lock$", re.IGNORECASE),
+    re.compile(r"lock\.json$", re.IGNORECASE),
+]
 OMITTED_BREVITY_TEXT: str = "**FILE OMITTED FOR BREVITY**"
 
 
@@ -11,7 +15,8 @@ def get_file_extension(file_name: str) -> str:
 
 
 def is_skipped_file(file_name: str) -> bool:
-    return get_file_extension(file_name) in SKIPPED_FILE_TYPES
+    # Check if the file name matches any of the skip patterns
+    return any(pattern.search(file_name) for pattern in SKIPPED_FILE_PATTERNS)
 
 
 def is_empty_or_numeric(line: str) -> bool:
