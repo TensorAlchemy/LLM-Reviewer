@@ -3,6 +3,7 @@ import re
 from typing import List, Tuple, Optional
 
 SKIPPED_FILE_TYPES: List[str] = [".lock"]
+OMITTED_BREVITY_TEXT: str = "**FILE OMITTED FOR BREVITY**"
 
 
 def get_file_extension(file_name: str) -> str:
@@ -28,23 +29,16 @@ def parse_hunk_header(header: str) -> Optional[int]:
 
 def process_hunk_header(
     line: str,
-    idx: int,
     lines: List[str],
 ) -> Tuple[int, bool, List[str]]:
     current_line_number = parse_hunk_header(line) or 0
     numbered_lines = remove_last_if_empty_or_numeric(lines)
     numbered_lines.append(line)
 
-    should_skip_file = False
     if len(lines) < 1:
-        return current_line_number, should_skip_file, numbered_lines
+        return current_line_number, numbered_lines
 
-    if idx > 0:
-        should_skip_file = is_skipped_file(lines[idx - 1])
-        if should_skip_file:
-            numbered_lines.append("**FILE OMITTED FOR BREVITY**")
-
-    return current_line_number, should_skip_file, numbered_lines
+    return current_line_number, numbered_lines
 
 
 def process_line(line: str, current_line_number: int) -> Tuple[str, int]:
@@ -64,16 +58,27 @@ def number_lines_in_patch(changes: str) -> str:
     should_skip_file: bool = False
     found_first_chunk: bool = False
 
-    for idx, line in enumerate(lines):
+    for line in lines:
         if line.startswith("@@"):
-            current_line_number, should_skip_file, numbered_lines = process_hunk_header(
-                line, idx, numbered_lines
+            if len(numbered_lines) > 0:
+                print(numbered_lines[-1])
+                should_skip_file = is_skipped_file(numbered_lines[-1])
+                if should_skip_file:
+                    numbered_lines.append(line)
+                    numbered_lines.append(OMITTED_BREVITY_TEXT)
+                    continue
+
+            current_line_number, numbered_lines = process_hunk_header(
+                line, numbered_lines
             )
             found_first_chunk = True
-        elif not found_first_chunk:
-            numbered_lines.append(line)
+
         elif should_skip_file:
             continue  # Skip all lines after "**FILE OMITTED FOR BREVITY**"
+
+        elif not found_first_chunk:
+            numbered_lines.append(line)
+
         else:
             processed_line, current_line_number = process_line(
                 line, current_line_number
