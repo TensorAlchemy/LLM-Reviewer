@@ -221,6 +221,9 @@ Please comment in the JSON standard on the above given git diff
 **line numbers have been added, please use them to format your response**
 
 Please only comment when you are sure there is a present bug or style inconsistency.
+If you cannot see the usage, but the function is not finished it may well be used.
+
+Reserve comments for really important issues.
 
 Produce pure JSON output, without any extra symbols (like ```json etc.).
 
