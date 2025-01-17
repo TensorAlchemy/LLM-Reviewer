@@ -2,19 +2,17 @@
 # -*- coding: utf-8 -*-
 #
 import os
-from typing import Tuple
 from enum import Enum
 from types import SimpleNamespace
+from typing import Tuple
 
+import anthropic
 import backoff
 import openai
-import anthropic
 import tiktoken
-
+from anthropic import Anthropic
 from loguru import logger
 from openai import OpenAI
-from anthropic import Anthropic
-
 
 if os.environ.get("OPENAI_API_KEY"):
     openai_client = OpenAI()
@@ -121,7 +119,6 @@ class LLMClient:
             self.encoder = tiktoken.encoding_for_model(self.model)
         elif self.provider == Provider.ANTHROPIC:
             self.encoder = None
-            pass
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
 

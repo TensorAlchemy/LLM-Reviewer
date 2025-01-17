@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
+import argparse
+import distutils
 import json
 import os
-import argparse
 import sys
 
-import distutils
 import completion
 import githubs
 from loguru import logger
-
 
 # Check required environment variables
 if not os.getenv("GITHUB_TOKEN"):

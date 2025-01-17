@@ -6,12 +6,10 @@ import os
 import traceback
 from typing import Tuple
 
-from loguru import logger
-
+import numbered_patch
 import requests
 from github import Github
-
-import numbered_patch
+from loguru import logger
 
 # List of event types
 EVENT_TYPE_PUSH = "push"

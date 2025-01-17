@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Tuple, Optional, Pattern
+from typing import List, Optional, Pattern, Tuple
 
 # File patterns that should be skipped when processing patches
 SKIPPED_FILE_PATTERNS: List[Pattern] = [
