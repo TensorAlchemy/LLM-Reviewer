@@ -69,13 +69,14 @@ class GithubClient:
             skipped_count = 0
 
             for file in pr.get_files():
-                logger.debug(f"File: {file.filename}")
-                logger.debug(f"Status: {file.status}")  # added, modified, removed
-
                 if should_skip_file(file.filename):
+                    logger.debug(f"{file.filename}: skipped")
                     skipped_count += 1
                     continue
 
+                logger.debug(
+                    f"{file.filename}: {file.status}"
+                )  # added, modified, removed
                 file_count += 1
                 changes.append(f"diff --git a/{file.filename} b/{file.filename}")
                 changes.append(f"--- a/{file.filename}")
@@ -210,6 +211,7 @@ class GithubClient:
             )
             return True
 
+        print(filtered_changes)
         changes = numbered_patch.number_lines_in_patch(filtered_changes)
 
         # Delete old comments before adding new ones
