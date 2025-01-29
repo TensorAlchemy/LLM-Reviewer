@@ -210,7 +210,6 @@ class GithubClient:
             )
             return True
 
-        print(filtered_changes)
         changes = numbered_patch.number_lines_in_patch(filtered_changes)
 
         # Delete old comments before adding new ones
@@ -219,6 +218,8 @@ class GithubClient:
         # Review the full PR changes together
         prompt = self.llm_client.get_pr_prompt(changes)
         review_json_str, cost = self.get_completion(prompt)
+
+        print(prompt)
         logger.info(f"review_json={review_json_str}")
         try:
             review_json = json.loads(review_json_str)

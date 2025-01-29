@@ -241,6 +241,8 @@ class LLMClient:
             logger.warning("No relevant changes found after filtering")
             return "No relevant code changes to review."
 
+        logger.debug(f"Sending: {len(changes)} characters to LLM")
+
         prompt = f"""Here are changes for this PR:
 ```
 {changes}
@@ -274,15 +276,6 @@ EXAMPLE:
       ...
   ]
 }}"""
-        return prompt
-
-    def get_file_prompt(self, filename, changes) -> str:
-        """Generate a prompt for a file review"""
-        prompt = f"""Here are changes for file `{filename}` within this PR:
-```
-{changes}
-```
-    """
         return prompt
 
 
