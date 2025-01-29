@@ -145,7 +145,6 @@ class LLMClient:
                 },
             ],
             temperature=self.temperature,
-            response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content
         cost = self.calculate_cost(
