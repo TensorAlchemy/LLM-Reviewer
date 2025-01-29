@@ -146,36 +146,30 @@ class GithubClient:
         return ext.lower() in (ext.lower() for ext in self.skip_extensions)
 
     def filter_diff(self, changes: str) -> str:
-        """Filter diff to only include relevant files and changes"""
-        # Split diff into per-file chunks
-        chunks = changes.split("diff --git ")
-        filtered_chunks = []
+        """Filter a diff to only include relevant file changes.
 
-        for chunk in chunks:
-            if not chunk.strip():
-                continue
+        Excludes: empty chunks, binary files, and files with skipped extensions.
+        """
+        if not changes:
+            return ""
 
-            # Extract filename from diff header
-            try:
-                filename = chunk.split(" b/")[1].split("\n")[0]
-            except IndexError:
-                continue
+        filtered_lines = []
+        current_file = None
 
-            # Skip if file extension should be ignored
-            if self.should_skip_file(filename):
-                continue
+        for line in changes.splitlines():
+            # Check for file header lines
+            if line.startswith("diff --git"):
+                current_file = line.split()[-1][2:]  # Get b/filename part
+                if self.should_skip_file(current_file):
+                    current_file = None  # Skip this file
+                    continue
+                filtered_lines.append(line)
 
-            # Skip binary files
-            if "Binary files" in chunk:
-                continue
+            # Only include lines if we're processing a non-skipped file
+            elif current_file is not None:
+                filtered_lines.append(line)
 
-            # Skip .import files
-            if filename.endswith(".import"):
-                continue
-
-            filtered_chunks.append("diff --git " + chunk)
-
-        return "".join(filtered_chunks)
+        return "\n".join(filtered_lines)
 
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""

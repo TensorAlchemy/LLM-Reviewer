@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 #
 import os
+import traceback
 from enum import Enum
 from types import SimpleNamespace
 from typing import Tuple
-import traceback
 
 import anthropic
 import backoff
@@ -50,16 +50,19 @@ class Provider(Enum):
 
 
 class LLMClient:
-    """LLM API client"""
+    """LLM API client for making completion requests."""
 
-    # Maximum tokens allowed for input, based on model limits
-    MAX_INPUT_TOKENS = {
+    # Token limits and pricing config
+    ModelConfig = dict[str, dict[str, int | float | Provider]]
+    TokenLimits = dict[str, int]
+
+    MAX_INPUT_TOKENS: TokenLimits = {
         "gpt-4o": 100000,
         "gpt-4o-mini": 100000,
         "claude-3-5-sonnet-20240620": 200000,
     }
 
-    models = {
+    models: ModelConfig = {
         # commented out obsolete models:
         #        "gpt-3.5-turbo-1106": {
         #            "input_price": 1,
@@ -217,17 +220,17 @@ class LLMClient:
             logger.error(f"Error checking text length: " + traceback.format_exc())
             return True
 
-    def calculate_cost(self, usage_obj):
-        input_tokens = usage_obj.input_tokens
-        output_tokens = usage_obj.output_tokens
+    def calculate_cost(self, usage_obj) -> float:
+        """Calculate total cost based on token usage."""
 
-        input_cost = input_tokens * self.model_info["input_price"] / 1e6
-        output_cost = output_tokens * self.model_info["output_price"] / 1e6
-        total_cost = input_cost + output_cost
-        # round to 4 decimals
-        total_cost = round(total_cost, 6)
+        def cost_for_type(tokens: int, price_key: str) -> float:
+            return tokens * self.model_info[price_key] / 1e6
 
-        return total_cost
+        return round(
+            cost_for_type(usage_obj.input_tokens, "input_price")
+            + cost_for_type(usage_obj.output_tokens, "output_price"),
+            6,
+        )
 
     def get_pr_prompt(self, changes: str) -> str:
         """
