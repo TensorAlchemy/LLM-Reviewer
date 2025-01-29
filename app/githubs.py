@@ -152,10 +152,13 @@ class GithubClient:
         current_file = None
 
         for line in changes.splitlines():
+            logger.debug(f"Processing {line}")
+
             # Check for file header lines
             if line.startswith("diff --git"):
                 current_file = line.split()[-1][2:]  # Get b/filename part
                 if should_skip_file(current_file):
+                    logger.debug(f"Skipping {current_file}")
                     current_file = None  # Skip this file
                     continue
                 filtered_lines.append(line)
@@ -167,11 +170,22 @@ class GithubClient:
         return "\n".join(filtered_lines)
 
     def review_pr(self, payload) -> bool:
-        """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
+
+        print(len(changes))
 
         # Filter out irrelevant files first
         filtered_changes = self.filter_diff(changes)
+
+        print(len(filtered_changes))
+        if not filtered_changes.strip():
+            # Create comment for empty/filtered changes
+            pr.create_issue_comment(
+                f"LGTM (no relevant code changes found)\n\n"
+                f"(review was done using={self.llm_client.model})"
+            )
+            return True
+
         changes = numbered_patch.number_lines_in_patch(filtered_changes)
 
         # Delete old comments before adding new ones

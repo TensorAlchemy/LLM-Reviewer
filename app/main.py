@@ -92,6 +92,7 @@ if not event_file_path:
 
 with open(event_file_path, encoding="utf-8") as ev:
     payload = json.load(ev)
+
 eventType = github_client.get_event_type(payload)
 logger.info(f"Evaluating {eventType} event")
 

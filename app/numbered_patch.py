@@ -145,23 +145,16 @@ def extract_filename(line: str) -> str:
 
 
 def should_skip_file(filename: str) -> bool:
-    """
-    Check if file should be skipped based on its extension.
+    """Check if file should be skipped based on its extension."""
+    # Skip .uid files
+    if filename.endswith(".uid"):
+        return True
 
-    Args:
-        filename: Name of the file to check
+    # Get the base extension before any .uid suffix
+    base_name = filename.replace(".uid", "")
+    ext = base_name.split(".")[-1].lower()
 
-    Returns:
-        True if file should be skipped based on its extension, False otherwise
-    """
-
-    filename = filename.lower()
-
-    # Check if filename ends with any of the skip extensions
-    return any(
-        filename.endswith(f".{ext}") or filename.endswith(f"-{ext}")
-        for ext in SKIP_EXTENSIONS
-    )
+    return ext in SKIP_EXTENSIONS.split(",")
 
 
 def process_lines(lines: List[str]) -> List[str]:
