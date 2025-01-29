@@ -71,7 +71,6 @@ class GithubClient:
             for file in pr.get_files():
                 logger.debug(f"File: {file.filename}")
                 logger.debug(f"Status: {file.status}")  # added, modified, removed
-                logger.debug(f"Patch:\n{file.patch}")  # Show the actual diff/patch
 
                 if should_skip_file(file.filename):
                     skipped_count += 1
