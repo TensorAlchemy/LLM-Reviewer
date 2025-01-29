@@ -1,6 +1,17 @@
 from typing import List
 
 from app.numbered_patch import number_lines_in_patch
+from app.numbered_patch import (
+    number_lines_in_patch,
+    extract_filename,
+    check_file_size,
+    is_file_name,
+    should_skip_file,
+    process_line,
+    parse_hunk_header,
+    DiffState,
+    MAX_FILE_LINES,
+)
 
 
 def compare_results(expected_output: str, actual_output: str, error: str) -> None:
@@ -11,6 +22,70 @@ def compare_results(expected_output: str, actual_output: str, error: str) -> Non
 
     for idx in range(to_iter):
         assert split_expected[idx] == split_actual[idx], error
+
+
+def test_extract_filename():
+    assert extract_filename("diff --git a/src/file.py b/src/file.py") == "src/file.py"
+    assert extract_filename("+++ b/src/test.py") == "src/test.py"
+    assert extract_filename("--- a/old.py") == ""  # Skip --- lines
+
+
+def test_check_file_size():
+    small_file = [
+        "diff --git a/small.py b/small.py",
+        "@@ -1,3 +1,5 @@",
+        " import sys",
+        "+x = 1",
+        " y = 2",
+    ]
+    assert not check_file_size(small_file)
+
+    large_file = [" line " + str(i) for i in range(MAX_FILE_LINES + 1)]
+    assert check_file_size(large_file)
+
+
+def test_is_file_name():
+    assert is_file_name("diff --git a/file.py b/file.py")
+    assert is_file_name("+++ b/test.py")
+    assert is_file_name("--- a/old.py")
+    assert not is_file_name(" Some regular line")
+    assert not is_file_name("+added line")
+
+
+import pytest
+from unittest.mock import patch
+
+
+@patch("app.numbered_patch.SKIP_EXTENSIONS", "jpg,json,tar.gz")
+def test_should_skip_file():
+    assert should_skip_file("package-lock.json"), "Should skip json files"
+    assert should_skip_file("file.jpg"), "Should skip jpg files"
+    assert should_skip_file("archive.tar.gz"), "Should skip tar.gz files"
+    assert not should_skip_file("code.py"), "Should not skip py files"
+    assert not should_skip_file("test.txt"), "Should not skip txt files"
+
+
+def test_process_line():
+    state = DiffState()
+
+    # Test removal line
+    assert process_line("-removed line", state) == "\t-removed line"
+    assert state.current_line == 0  # Line number shouldn't increment
+
+    # Test addition line
+    assert process_line("+added line", state) == "1\t+added line"
+    assert state.current_line == 1
+
+    # Test context line
+    assert process_line(" context", state) == "2\t context"
+    assert state.current_line == 2
+
+
+def test_parse_hunk_header():
+    assert parse_hunk_header("@@ -1,7 +1,6 @@") == 0
+    assert parse_hunk_header("@@ -0,0 +1,3 @@") == 0
+    assert parse_hunk_header("@@ -1 +2 @@") == 1
+    assert parse_hunk_header("invalid") is None
 
 
 def test_number_lines_in_patch_add_code():
@@ -144,7 +219,6 @@ index 5dc9fd1..54f6661 100644
 @@ -0,0 +1 @@
 """
     expected_output = """diff --git a/package-lock.json b/package-lock.json
-index 5dc9fd1..54f6661 100644
 --- a/hello.py
 +++ b/hello.py
 @@ -1,3 +1,5 @@

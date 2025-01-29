@@ -6,6 +6,7 @@ import os
 import traceback
 from typing import Any, List, Optional, Tuple
 
+from app.config import SKIP_EXTENSIONS
 import numbered_patch
 import requests
 from github import Github
@@ -139,11 +140,6 @@ class GithubClient:
                     comment.delete()
                 except Exception as e:
                     logger.error(f"failed to delete review comment {e}")
-
-    def should_skip_file(self, filename: str) -> bool:
-        """Check if file should be skipped based on its extension"""
-        ext = os.path.splitext(filename)[1].lstrip(".")
-        return ext.lower() in (ext.lower() for ext in self.skip_extensions)
 
     def filter_diff(self, changes: str) -> str:
         """Filter a diff to only include relevant file changes.
