@@ -1,66 +1,66 @@
-# LLM-Reviewer
+![image](https://github.com/user-attachments/assets/80326836-39e0-4f39-95cc-445f409f0919)
 
-Automated pull requests reviewing and issues triaging with an LLM.
 
-## How to use
+# LLM-Reviewer 
 
-You need at one or more LLM API keys:
+A GitHub Action that automatically reviews pull requests using LLMs (Large Language Models).
 
-- Create an OpenAI API key [here](https://platform.openai.com/account/api-keys).
-- Create an Anthropic API key [here](https://console.anthropic.com/settings/keys).
+## Setup
 
-Set the keys as [action secrets in your repository](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
+1. Get an API key from one or more LLM providers:
+   - OpenAI: [Get API key](https://platform.openai.com/account/api-keys)  
+   - Anthropic: [Get API key](https://console.anthropic.com/settings/keys)
 
-Finally, create a file named `.github/workflows/llm-review.yml` with the following contents:
+2. Add the API key(s) as [repository secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository):
+   - `OPENAI_API_KEY`
+   - `ANTHROPIC_API_KEY`
+
+3. Create `.github/workflows/llm-review.yml`:
 
 ```yaml
 name: LLM Review
-
 on: [pull_request]
 
-
 jobs:
-  llm-review:
-    name: LLM Review
+  review:
     runs-on: ubuntu-latest
     steps:
-    - uses: TensorAlchemy/LLM-Reviewer@main
-      name: LLM Review
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        # OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
-      # Optional configurations:
-      # with:
-      #   model: "gpt-4o"
-      #   temperature: 0.2
-      #   review_per_file: true
-      #   comment_per_file: true
+      - uses: TensorAlchemy/LLM-Reviewer@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          # Optional settings:
+          model: "claude-3-5-sonnet-20240620"  # Default model
+          temperature: 0.2  # Model randomness (0-1)
+          blocking: false   # Block PR on review failures
+          review_per_file: false  # Review each file separately
+          comment_per_file: true  # Post comments per file
 ```
 
-## Configurations
+## Configuration
 
-|Parameter|Description|Required|Default|
-|---------|-----------|--------|-------|
-|GITHUB_TOKEN|Github token used to send out review comments|true|""|
-|OPENAI_API_KEY|API key used to invoke OpenAI|false|""|
-|ANTHROPIC_API_KEY|API key used to invoke Anthropic|false|""|
-|OPENAI_API_BASE|API based used to access Azure OpenAI|false|""|
-|blocking|Blocking the pull requests on LLM failures|false|False|
-|model|LLM model name|false|claude-3-5-sonnet-20240620|
-|temperature|Temperature for the model|false|0.2|
-|review_per_file|Send out review requests per file|false|Large changes would be reviewed per file automatically|
-|comment_per_file|Post review comments per file|false|True
+### Required Environment Variables
 
-## Samples
+| Name | Description |
+|------|-------------|
+| GITHUB_TOKEN | GitHub token for posting reviews (auto-provided) |
+| OPENAI_API_KEY or ANTHROPIC_API_KEY | At least one LLM provider API key |
 
-The original ChatGPT reviewer PRs are also getting reviewed by ChatGPT, refer the [pull requests](https://github.com/feiskyer/ChatGPT-Reviewer/pulls?q=is%3Apr) for the sample review comments.
+### Optional Settings
 
-## Special notes for public repository forks
+| Name | Description | Default |
+|------|-------------|---------|
+| model | LLM model to use | claude-3-5-sonnet-20240620 |
+| temperature | Model randomness (0-1) | 0.2 |
+| blocking | Block PR if review fails | false |
+| review_per_file | Review files separately | false |
+| comment_per_file | Post per-file comments | true |
+| skip_extensions | File extensions to ignore | png,jpg,etc |
 
-In order to protect public repositories for malicious users, Github runs all pull request workflows raised from repository forks with a read-only token and no access to secrets.
+## Notes for Repository Forks
 
-`pull_request_target` event could be used in such cases, which would run the workflow in the context of the base of the pull request (rather than in the context of the merge commit, as the `pull_request` event does).
+For security, GitHub runs workflows from forked repository PRs with read-only permissions and no access to secrets.
 
-Refer Github docs [here](https://docs.github.com/en/github-ae@latest/actions/using-workflows/events-that-trigger-workflows#pull_request_target) for more details of `pull_request_target` event.
+To enable reviews on fork PRs, use `pull_request_target` instead of `pull_request` in your workflow. This runs the workflow in the base repository's context. [Learn more](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target).
