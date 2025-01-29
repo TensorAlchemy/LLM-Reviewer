@@ -194,6 +194,66 @@ index 0000000..11b15b1
     )
 
 
+def test_filter_omitted_files():
+    input_text = """diff --git a/package-lock.json b/package-lock.json
+index 123..456 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,3 +1,5 @@
+    {
+-     "some": "json"
++     "some": "updated json" 
+    }
+diff --git a/src/main.py b/src/main.py
+@@ -10,6 +10,7 @@
+    def hello():
++       print("world")
+"""
+    expected_output = """diff --git a/package-lock.json b/package-lock.json
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,3 +1,5 @@
+**FILE OMITTED FOR BREVITY**
+diff --git a/src/main.py b/src/main.py
+@@ -10,6 +10,7 @@
+10\t    def hello():
+11\t+       print("world")"""
+    filtered = number_lines_in_patch(input_text)
+    assert (
+        filtered == expected_output
+    ), "Should preserve headers and add brevity marker for filtered files while maintaining original line numbers"
+    filtered = number_lines_in_patch(input_text)
+    assert (
+        filtered == expected_output
+    ), "Should preserve headers and add brevity marker for filtered files"
+    assert (
+        number_lines_in_patch(input_text) == expected_output
+    ), "Should completely remove filtered files"
+
+
+def test_pr_prompt_formatting():
+    from completion import LLMClient
+
+    cli = LLMClient(model="gpt-4o-mini", temperature=0.2)
+
+    changes = """diff --git a/src/main.py b/src/main.py
+@@ -1,3 +1,4 @@
+def main():
+-    print("hello")
++    print("world")
++    return 42
+"""
+
+    prompt = cli.get_pr_prompt(changes)
+
+    # Verify prompt contains proper diff without brevity markers
+    assert "**FILE OMITTED FOR BREVITY**" not in prompt
+    assert "@@ -1,3 +1,4 @@" in prompt
+    assert "def main():" in prompt
+    assert '-    print("hello")' in prompt
+    assert '+    print("world")' in prompt
+
+
 def test_no_lock_files():
     input_text = """diff --git a/package-lock.json b/package-lock.json
 index 5dc9fd1..54f6661 100644

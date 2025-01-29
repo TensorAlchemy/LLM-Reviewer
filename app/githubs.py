@@ -160,18 +160,34 @@ class GithubClient:
         filtered_lines = []
         current_file = None
 
+        current_file = None
+        header_lines = []
+        
         for line in changes.splitlines():
-            # Check for file header lines
-            if line.startswith("diff --git"):
-                current_file = line.split()[-1][2:]  # Get b/filename part
-                if should_skip_file(current_file):
-                    logger.debug(f"Skipping {current_file}")
-                    current_file = None  # Skip this file
-                    continue
-                filtered_lines.append(line)
-
-            # Only include lines if we're processing a non-skipped file
-            elif current_file is not None:
+            # Collect header lines
+            if line.startswith(("diff --git", "--- ", "+++ ")):
+                header_lines.append(line)
+                if line.startswith("diff --git"):
+                    current_file = line.split()[-1][2:]  # Get b/filename part
+                continue
+                
+            # When we hit the hunk header (@@ line)
+            if line.startswith("@@"):
+                if current_file and should_skip_file(current_file):
+                    logger.debug(f"Skipping content of {current_file}")
+                    # Add headers and brevity marker
+                    filtered_lines.extend(header_lines)
+                    filtered_lines.append(line)
+                    filtered_lines.append("**FILE OMITTED FOR BREVITY**")
+                else:
+                    # Add headers and continue with content
+                    filtered_lines.extend(header_lines)
+                    filtered_lines.append(line)
+                header_lines = []
+                continue
+                
+            # Add content lines only if we're not in a skipped file
+            if not header_lines and current_file and not should_skip_file(current_file):
                 filtered_lines.append(line)
 
         return "\n".join(filtered_lines)
