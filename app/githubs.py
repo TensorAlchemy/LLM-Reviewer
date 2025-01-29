@@ -70,7 +70,6 @@ class GithubClient:
 
             for file in pr.get_files():
                 if should_skip_file(file.filename):
-                    logger.debug(f"{file.filename}: skipped")
                     skipped_count += 1
                     continue
 
