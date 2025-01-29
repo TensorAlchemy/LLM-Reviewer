@@ -4,8 +4,7 @@
 import json
 import os
 import traceback
-from typing import Tuple
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 import numbered_patch
 import requests

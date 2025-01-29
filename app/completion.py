@@ -7,10 +7,6 @@ from types import SimpleNamespace
 from typing import Tuple
 
 import anthropic
-from typing import Optional, Tuple, Union
-
-import anthropic
-from anthropic.types import MessageParam
 import backoff
 import openai
 import tiktoken
@@ -198,8 +194,10 @@ class LLMClient:
 
     def count_tokens(self, text):
         if self.provider == Provider.OPENAI:
+            assert self.encoder is not None, "encoder was not setup"
+
             return len(self.encoder.encode(text))
-        elif self.provider == provider.ANTHROPIC:
+        elif self.provider == Provider.ANTHROPIC:
             return len(anthropic_client.count_tokens(text))
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
