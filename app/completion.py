@@ -5,6 +5,7 @@ import os
 from enum import Enum
 from types import SimpleNamespace
 from typing import Tuple
+import traceback
 
 import anthropic
 import backoff
@@ -198,7 +199,7 @@ class LLMClient:
 
             return len(self.encoder.encode(text))
         elif self.provider == Provider.ANTHROPIC:
-            return len(anthropic_client.count_tokens(text))
+            return anthropic_client.count_tokens(text)
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
 
@@ -213,9 +214,9 @@ class LLMClient:
                 )
                 return True
             return False
-        except Exception as e:
-            logger.error(f"Error checking text length: {e}")
-            return False
+        except Exception:
+            logger.error(f"Error checking text length: " + traceback.format_exc())
+            return True
 
     def calculate_cost(self, usage_obj):
         input_tokens = usage_obj.input_tokens
