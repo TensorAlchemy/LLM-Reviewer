@@ -57,7 +57,6 @@ jobs:
 | blocking | Block PR if review fails | false |
 | review_per_file | Review files separately | false |
 | comment_per_file | Post per-file comments | true |
-| skip_extensions | File extensions to ignore | png,jpg,etc |
 
 ## Notes for Repository Forks
 

@@ -156,12 +156,11 @@ def should_skip_file(filename: str) -> bool:
     """
 
     filename = filename.lower()
-    skip_extensions = [x.strip().lower() for x in SKIP_EXTENSIONS.split(",")]
 
     # Check if filename ends with any of the skip extensions
     return any(
         filename.endswith(f".{ext}") or filename.endswith(f"-{ext}")
-        for ext in skip_extensions
+        for ext in SKIP_EXTENSIONS
     )
 
 

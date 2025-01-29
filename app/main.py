@@ -82,7 +82,6 @@ github_client = githubs.GithubClient(
     review_per_file=args.review_per_file,
     comment_per_file=args.comment_per_file,
     blocking=args.blocking,
-    skip_extensions=[ext.strip() for ext in args.skip_extensions.split(",")],
 )
 
 

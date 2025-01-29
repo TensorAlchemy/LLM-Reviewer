@@ -8,6 +8,7 @@ from typing import Any, List, Optional, Tuple
 
 import numbered_patch
 import requests
+from numbered_patch import should_skip_file
 from github import Github
 from loguru import logger
 
@@ -36,7 +37,6 @@ class GithubClient:
         self.review_per_file = review_per_file
         self.comment_per_file = comment_per_file
         self.blocking = blocking
-        self.skip_extensions = skip_extensions or []
 
     def get_event_type(self, payload) -> str:
         """Determine the type of event"""
@@ -155,7 +155,7 @@ class GithubClient:
             # Check for file header lines
             if line.startswith("diff --git"):
                 current_file = line.split()[-1][2:]  # Get b/filename part
-                if self.should_skip_file(current_file):
+                if should_skip_file(current_file):
                     current_file = None  # Skip this file
                     continue
                 filtered_lines.append(line)
