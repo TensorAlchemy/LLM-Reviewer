@@ -69,6 +69,12 @@ parser.add_argument(
     type=distutils.util.strtobool,
     default=False,
 )
+parser.add_argument(
+    "--skip-extensions",
+    help="Comma-separated list of file extensions to skip (e.g. png,jpg,tscn)",
+    type=str,
+    default="png,jpg,jpeg,gif,bmp,tscn,ico,ttf,woff,woff2,eot,mp3,mp4,wav,import,pdf,zip,tar,gz,7z,bin,exe,dll,so,dylib",
+)
 args = parser.parse_args()
 
 
@@ -82,6 +88,7 @@ github_client = githubs.GithubClient(
     review_per_file=args.review_per_file,
     comment_per_file=args.comment_per_file,
     blocking=args.blocking,
+    skip_extensions=[ext.strip() for ext in args.skip_extensions.split(",")],
 )
 
 

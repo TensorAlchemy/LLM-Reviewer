@@ -5,6 +5,7 @@ import json
 import os
 import traceback
 from typing import Tuple
+from typing import Any, List, Optional
 
 import numbered_patch
 import requests
@@ -23,10 +24,11 @@ class GithubClient:
 
     def __init__(
         self,
-        llm_client,
-        review_per_file=False,
-        comment_per_file=False,
-        blocking=False,
+        llm_client: Any,
+        review_per_file: bool = False,
+        comment_per_file: bool = False,
+        blocking: bool = False,
+        skip_extensions: Optional[List[str]] = None,
     ):
         self.llm_client = llm_client
         self.github_token = os.getenv("GITHUB_TOKEN")
@@ -35,6 +37,7 @@ class GithubClient:
         self.review_per_file = review_per_file
         self.comment_per_file = comment_per_file
         self.blocking = blocking
+        self.skip_extensions = skip_extensions or []
 
     def get_event_type(self, payload) -> str:
         """Determine the type of event"""
@@ -51,22 +54,42 @@ class GithubClient:
 
     def get_pull_request(self, payload):
         """Get the pull request"""
-        repo = self.github_client.get_repo(os.getenv("GITHUB_REPOSITORY"))
-        pr = repo.get_pull(payload.get("number"))
+        try:
+            # Get repository from payload
+            repo_name = payload["repository"]["full_name"]
+            repo = self.github_client.get_repo(repo_name)
 
-        changes = requests.get(
-            pr.url,
-            timeout=30,
-            headers={
-                "Authorization": "Bearer " + self.github_token,
-                "Accept": "application/vnd.github.v3.diff",
-            },
-        ).text
+            # Get PR number from payload
+            pr_number = payload.get("pull_request", {}).get("number")
+            if not pr_number:
+                raise ValueError("Could not find PR number in payload")
 
-        return pr, changes
+            pr = repo.get_pull(pr_number)
 
-    def get_completion(self, prompt) -> Tuple[str, str]:
+            assert self.github_token is not None, "Github TOKEN not set"
+
+            # Get PR diff
+            changes = requests.get(
+                pr.url,
+                timeout=30,
+                headers={
+                    "Authorization": "Bearer " + str(self.github_token),
+                    "Accept": "application/vnd.github.v3.diff",
+                },
+            ).text
+
+            return pr, changes
+
+        except Exception as e:
+            logger.error(f"Error getting pull request details: {e}")
+            raise
+
+    def get_completion(self, prompt) -> Tuple[str, float]:
         """Get the completion text and cost"""
+        # Check if prompt is too long before sending to LLM
+        if self.llm_client.is_text_too_long(prompt):
+            logger.error("Prompt exceeds maximum token length")
+            return ("", 0.0)
         try:
             completion_text, cost = self.llm_client.get_completion(prompt, json=True)
             return completion_text, cost
@@ -78,7 +101,7 @@ class GithubClient:
                     f"The LLM failed on prompt with exception: {e}\n"
                     + traceback.format_exc()
                 )
-                return ""
+                return "", 0.0
 
     def delete_old_comments(self, pr, attempt: int = 1) -> None:
         """Delete old comments on the PR created by the bot"""
@@ -118,11 +141,50 @@ class GithubClient:
                 except Exception as e:
                     logger.error(f"failed to delete review comment {e}")
 
+    def should_skip_file(self, filename: str) -> bool:
+        """Check if file should be skipped based on its extension"""
+        ext = os.path.splitext(filename)[1].lstrip(".")
+        return ext.lower() in (ext.lower() for ext in self.skip_extensions)
+
+    def filter_diff(self, changes: str) -> str:
+        """Filter diff to only include relevant files and changes"""
+        # Split diff into per-file chunks
+        chunks = changes.split("diff --git ")
+        filtered_chunks = []
+
+        for chunk in chunks:
+            if not chunk.strip():
+                continue
+
+            # Extract filename from diff header
+            try:
+                filename = chunk.split(" b/")[1].split("\n")[0]
+            except IndexError:
+                continue
+
+            # Skip if file extension should be ignored
+            if self.should_skip_file(filename):
+                continue
+
+            # Skip binary files
+            if "Binary files" in chunk:
+                continue
+
+            # Skip .import files
+            if filename.endswith(".import"):
+                continue
+
+            filtered_chunks.append("diff --git " + chunk)
+
+        return "".join(filtered_chunks)
+
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""
         pr, changes = self.get_pull_request(payload)
 
-        changes = numbered_patch.number_lines_in_patch(changes)
+        # Filter out irrelevant files first
+        filtered_changes = self.filter_diff(changes)
+        changes = numbered_patch.number_lines_in_patch(filtered_changes)
 
         # Delete old comments before adding new ones
         self.delete_old_comments(pr)
@@ -152,7 +214,9 @@ class GithubClient:
             f"(review was done using={self.llm_client.model} with cost=${cost})"
         )
 
-        files_changed = pr.get_files()
+        files_changed = [
+            f for f in pr.get_files() if not self.should_skip_file(f.filename)
+        ]
         for file in files_changed:
             for comment in file_comments:
                 if file.filename == comment["file"]:
@@ -195,9 +259,7 @@ class GithubClient:
                             continue
 
                         logger.error(
-                            #
-                            "failed to comment on "
-                            + f"file={file.filename}:{line_no}: {e}"
+                            f"Failed to comment on file={file.filename}:{line_no}: {e}"
                         )
                         continue
 

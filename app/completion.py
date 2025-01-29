@@ -7,6 +7,10 @@ from types import SimpleNamespace
 from typing import Tuple
 
 import anthropic
+from typing import Optional, Tuple, Union
+
+import anthropic
+from anthropic.types import MessageParam
 import backoff
 import openai
 import tiktoken
@@ -50,6 +54,13 @@ class Provider(Enum):
 
 class LLMClient:
     """LLM API client"""
+
+    # Maximum tokens allowed for input, based on model limits
+    MAX_INPUT_TOKENS = {
+        "gpt-4o": 100000,
+        "gpt-4o-mini": 100000,
+        "claude-3-5-sonnet-20240620": 200000,
+    }
 
     models = {
         # commented out obsolete models:
@@ -193,6 +204,22 @@ class LLMClient:
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
 
+
+def is_text_too_long(self, text: str) -> bool:
+    """Check if text exceeds maximum token length for model"""
+    try:
+        token_count = self.count_tokens(text)
+        max_tokens = self.MAX_INPUT_TOKENS.get(self.model)
+        if max_tokens and token_count > max_tokens:
+            logger.warning(
+                f"Text too long: {token_count} tokens > {max_tokens} maximum"
+            )
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error checking text length: {e}")
+        return False
+
     def calculate_cost(self, usage_obj):
         input_tokens = usage_obj.input_tokens
         output_tokens = usage_obj.output_tokens
@@ -210,6 +237,10 @@ class LLMClient:
         Generate a prompt for a PR review
         to give JSON output with line and comments
         """
+        if not changes.strip():
+            logger.warning("No relevant changes found after filtering")
+            return "No relevant code changes to review."
+
         prompt = f"""Here are changes for this PR:
 ```
 {changes}
