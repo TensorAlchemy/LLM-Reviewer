@@ -52,7 +52,7 @@ class GithubClient:
         return EVENT_TYPE_OTHER
 
     def get_pull_request(self, payload):
-        """Get the pull request"""
+        """Get the pull request and its changes"""
         try:
             # Get repository from payload
             repo_name = payload["repository"]["full_name"]
@@ -65,19 +65,30 @@ class GithubClient:
 
             pr = repo.get_pull(pr_number)
 
-            assert self.github_token is not None, "Github TOKEN not set"
+            changes = []
+            file_count = 0
+            skipped_count = 0
 
-            # Get PR diff
-            changes = requests.get(
-                pr.url,
-                timeout=30,
-                headers={
-                    "Authorization": "Bearer " + str(self.github_token),
-                    "Accept": "application/vnd.github.v3.diff",
-                },
-            ).text
+            for file in pr.get_files():
+                logger.debug(f"File: {file.filename}")
+                logger.debug(f"Status: {file.status}")  # added, modified, removed
+                logger.debug(f"Patch:\n{file.patch}")  # Show the actual diff/patch
 
-            return pr, changes
+                if should_skip_file(file.filename):
+                    skipped_count += 1
+                    continue
+
+                file_count += 1
+                changes.append(f"diff --git a/{file.filename} b/{file.filename}")
+                changes.append(f"--- a/{file.filename}")
+                changes.append(f"+++ b/{file.filename}")
+                if file.patch:
+                    changes.append(file.patch)
+                changes.append("")  # Empty line between files
+
+            logger.info(f"Processed {file_count} files (skipped {skipped_count})")
+
+            return pr, "\n".join(changes)
 
         except Exception as e:
             logger.error(f"Error getting pull request details: {e}")
