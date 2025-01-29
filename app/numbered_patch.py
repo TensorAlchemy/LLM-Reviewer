@@ -2,7 +2,7 @@ import os
 import re
 from typing import List, Optional, Tuple
 
-from app.config import SKIP_EXTENSIONS
+from config import SKIP_EXTENSIONS
 
 # Text to show when file is omitted
 OMITTED_BREVITY_TEXT: str = "**FILE OMITTED FOR BREVITY**"
@@ -29,19 +29,22 @@ class DiffState:
 
 def is_empty_or_numeric(line: str) -> bool:
     return not line or line.isdigit()
+
+
 def check_file_size(lines: List[str]) -> bool:
     """
     Check if file exceeds maximum line limit.
-    
+
     Args:
         lines: List of diff lines
-        
+
     Returns:
         True if file should be skipped due to size
     """
     current_size = sum(1 for l in lines if l.startswith((" ", "+")))
     return current_size > MAX_FILE_LINES
-    
+
+
 def is_file_name(line: str) -> bool:
     return (
         line.startswith("---")
@@ -119,42 +122,43 @@ def process_line(line: str, state: DiffState) -> str:
     else:
         return line
 
+
 def extract_filename(line: str) -> str:
     """
     Extract filename from a diff header line.
-    
+
     Args:
         line: A diff header line (diff --git, +++ or ---)
-        
+
     Returns:
         Extracted filename or empty string if line should be skipped
     """
-    if line.startswith('diff --git'):
+    if line.startswith("diff --git"):
         # Format: diff --git a/path b/path
         return line.split()[-1][2:]  # Take 'b/path' and remove 'b/'
-    elif line.startswith('+++'):
+    elif line.startswith("+++"):
         # Format: +++ b/path
         filename = line[4:].strip()  # Skip '+++ ' prefix
-        if filename.startswith('b/'):
+        if filename.startswith("b/"):
             filename = filename[2:]  # Strip b/ prefix
         return filename
     return ""  # Skip --- lines
 
-def should_skip_file(filename: str) -> bool:
 
+def should_skip_file(filename: str) -> bool:
     """
     Check if file should be skipped based on its extension.
-    
+
     Args:
         filename: Name of the file to check
-        
+
     Returns:
         True if file should be skipped based on its extension, False otherwise
     """
 
     filename = filename.lower()
     skip_extensions = [x.strip().lower() for x in SKIP_EXTENSIONS.split(",")]
-    
+
     # Check if filename ends with any of the skip extensions
     return any(
         filename.endswith(f".{ext}") or filename.endswith(f"-{ext}")
