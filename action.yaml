@@ -20,30 +20,30 @@ inputs:
     required: false
   blocking:
     description: "Blocking the pull requests on LLM failures"
-    default: 'False'
+    default: "False"
     required: false
   temperature:
     description: "Temperature for the model"
-    default: '0.2'
+    default: "0.2"
     required: false
   review_per_file:
     description: "Send out review requests per file"
-    default: 'False'
+    default: "False"
     required: false
   comment_per_file:
     description: "Post review comments per file"
-    default: 'True'
+    default: "True"
     required: false
 
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "docker"
+  image: "docker://tensoralchemy/llm-reviewer:latest"
   args:
-  - --model=${{ inputs.model }}
-  - --temperature=${{ inputs.temperature }}
-  - --review-per-file=${{ inputs.review_per_file }}
-  - --comment-per-file=${{ inputs.comment_per_file }}
-  - --blocking=${{ inputs.blocking }}
+    - --model=${{ inputs.model }}
+    - --temperature=${{ inputs.temperature }}
+    - --review-per-file=${{ inputs.review_per_file }}
+    - --comment-per-file=${{ inputs.comment_per_file }}
+    - --blocking=${{ inputs.blocking }}
 branding:
-  icon: 'compass'
-  color: 'blue'
+  icon: "compass"
+  color: "blue"
