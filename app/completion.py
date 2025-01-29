@@ -204,21 +204,20 @@ class LLMClient:
         else:
             raise ValueError(f"Unknown provider {self.provider.name}")
 
-
-def is_text_too_long(self, text: str) -> bool:
-    """Check if text exceeds maximum token length for model"""
-    try:
-        token_count = self.count_tokens(text)
-        max_tokens = self.MAX_INPUT_TOKENS.get(self.model)
-        if max_tokens and token_count > max_tokens:
-            logger.warning(
-                f"Text too long: {token_count} tokens > {max_tokens} maximum"
-            )
-            return True
-        return False
-    except Exception as e:
-        logger.error(f"Error checking text length: {e}")
-        return False
+    def is_text_too_long(self, text: str) -> bool:
+        """Check if text exceeds maximum token length for model"""
+        try:
+            token_count = self.count_tokens(text)
+            max_tokens = self.MAX_INPUT_TOKENS.get(self.model)
+            if max_tokens and token_count > max_tokens:
+                logger.warning(
+                    f"Text too long: {token_count} tokens > {max_tokens} maximum"
+                )
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error checking text length: {e}")
+            return False
 
     def calculate_cost(self, usage_obj):
         input_tokens = usage_obj.input_tokens
