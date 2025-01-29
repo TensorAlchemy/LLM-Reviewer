@@ -54,7 +54,7 @@ def test_is_file_name():
 from unittest.mock import patch
 
 
-@patch("app.numbered_patch.SKIP_EXTENSIONS", "jpg,json,tar.gz")
+@patch("app.numbered_patch.SKIP_EXTENSIONS", "jpg,json,gz")
 def test_should_skip_file():
     assert should_skip_file("package-lock.json"), "Should skip json files"
     assert should_skip_file("file.jpg"), "Should skip jpg files"

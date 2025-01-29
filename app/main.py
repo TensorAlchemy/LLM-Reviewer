@@ -15,13 +15,9 @@ from loguru import logger
 if not os.getenv("GITHUB_TOKEN"):
     logger.error("Please set the GITHUB_TOKEN environment variable")
     exit(1)
-if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
-    logger.error(
-        #
-        "Please set the OPENAI_API_KEY "
-        + "or ANTHROPIC_API_KEY environment variable"
-    )
-    exit(1)
+    if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
+        logger.error("Please set either OPENAI_API_KEY or ANTHROPIC_API_KEY")
+        exit(1)
 
 # Parse arguments
 parser = argparse.ArgumentParser(

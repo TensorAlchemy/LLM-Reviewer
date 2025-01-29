@@ -7,10 +7,9 @@ import traceback
 from typing import Any, List, Optional, Tuple
 
 import numbered_patch
-import requests
-from numbered_patch import should_skip_file
 from github import Github
 from loguru import logger
+from numbered_patch import should_skip_file
 
 # List of event types
 EVENT_TYPE_PUSH = "push"
@@ -163,8 +162,6 @@ class GithubClient:
         current_file = None
 
         for line in changes.splitlines():
-            logger.debug(f"Processing {line}")
-
             # Check for file header lines
             if line.startswith("diff --git"):
                 current_file = line.split()[-1][2:]  # Get b/filename part
@@ -180,15 +177,32 @@ class GithubClient:
 
         return "\n".join(filtered_lines)
 
+    def _create_comment(self, pr, comment: str, file=None, line=None, start_line=None):
+        """Helper to create PR comments with consistent formatting"""
+        try:
+            if file and line:
+                lines = {"line": line}
+                if start_line and start_line != line:
+                    lines["start_line"] = start_line
+
+                pr.create_review_comment(
+                    body=comment, commit=list(pr.get_commits())[-1], path=file, **lines
+                )
+            else:
+                pr.create_issue_comment(
+                    f"{comment}\n\n(review was done using={self.llm_client.model})"
+                )
+        except Exception as e:
+            logger.error(f"Failed to create comment: {e}")
+            if self.blocking:
+                raise
+
     def review_pr(self, payload) -> bool:
         pr, changes = self.get_pull_request(payload)
-
-        print(len(changes))
 
         # Filter out irrelevant files first
         filtered_changes = self.filter_diff(changes)
 
-        print(len(filtered_changes))
         if not filtered_changes.strip():
             # Create comment for empty/filtered changes
             pr.create_issue_comment(
@@ -222,14 +236,9 @@ class GithubClient:
             pr_comment = "Found some issues"
 
         # Create comment on whole PR
-        pr.create_issue_comment(
-            f"{pr_comment}\n\n"
-            f"(review was done using={self.llm_client.model} with cost=${cost})"
-        )
+        self._create_comment(pr, f"{pr_comment} (cost=${cost})")
 
-        files_changed = [
-            f for f in pr.get_files() if not self.should_skip_file(f.filename)
-        ]
+        files_changed = [f for f in pr.get_files() if not should_skip_file(f.filename)]
         for file in files_changed:
             for comment in file_comments:
                 if file.filename == comment["file"]:
@@ -240,12 +249,12 @@ class GithubClient:
                         if comment["start_line"] != line_no:
                             lines["start_line"] = comment["start_line"]
 
-                        # Create comment on certain PR line
-                        pr.create_review_comment(
-                            body=comment["comment"],
-                            commit=list(pr.get_commits())[-1],
-                            path=file.filename,
-                            **lines,
+                        self._create_comment(
+                            pr,
+                            comment["comment"],
+                            file=file.filename,
+                            line=line_no,
+                            start_line=comment["start_line"],
                         )
                     except Exception as e:
                         if (

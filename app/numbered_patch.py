@@ -169,11 +169,8 @@ def process_lines(lines: List[str]) -> List[str]:
     Raises:
         ValueError: If lines is None or contains invalid diff format
     """
-    if not isinstance(lines, list):
-        raise ValueError("Input must be a list of strings")
-
     if not all(isinstance(line, str) for line in lines):
-        raise ValueError("All lines must be strings")
+        raise ValueError("Input must be a list of strings")
 
     numbered_lines: List[str] = []
     state = DiffState()
