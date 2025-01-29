@@ -1,22 +1,8 @@
-import os
 import re
-from typing import List, Optional, Pattern, Tuple
+from typing import List, Optional, Tuple
 
-# File patterns that should be skipped when processing patches
-SKIPPED_FILE_PATTERNS: List[Pattern] = [
-    re.compile(r"\.lock$", re.IGNORECASE),
-    re.compile(r"lock\.json$", re.IGNORECASE),
-]
+# Text to show when file is omitted
 OMITTED_BREVITY_TEXT: str = "**FILE OMITTED FOR BREVITY**"
-
-
-def get_file_extension(file_name: str) -> str:
-    return os.path.splitext(file_name)[1].lower()
-
-
-def is_skipped_file(file_name: str) -> bool:
-    # Check if the file name matches any of the skip patterns
-    return any(pattern.search(file_name) for pattern in SKIPPED_FILE_PATTERNS)
 
 
 def is_empty_or_numeric(line: str) -> bool:
@@ -58,20 +44,23 @@ def process_line(line: str, current_line_number: int) -> Tuple[str, int]:
 
 
 def number_lines_in_patch(changes: str) -> str:
+    """Add line numbers to a git patch while respecting diff format.
+
+    Returns the original string if it does not contain diff chunks ("@@").
+    """
     if "@@" not in changes:
         return changes
 
-    lines = changes.split("\n")
-    numbered_lines: List[str] = []
-    current_line_number: int = 0
-    should_skip_file: bool = False
-    found_first_chunk: bool = False
+    def process_lines(lines: List[str]) -> List[str]:
+        numbered_lines: List[str] = []
+        current_line_number: int = 0
+        should_skip_file: bool = False
+        found_first_chunk: bool = False
 
-    for line in lines:
-        if is_file_name(line):
-            numbered_lines.append(line)
-            should_skip_file = is_skipped_file(line)
-            continue
+        for line in lines:
+            if is_file_name(line):
+                numbered_lines.append(line)
+                continue
 
         if line.startswith("@@"):
             found_first_chunk = True
@@ -97,3 +86,6 @@ def number_lines_in_patch(changes: str) -> str:
             numbered_lines.append(processed_line)
 
     return "\n".join(remove_last_if_empty_or_numeric(numbered_lines))
+    return "\n".join(
+        remove_last_if_empty_or_numeric(process_lines(changes.split("\n")))
+    )

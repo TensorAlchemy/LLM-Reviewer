@@ -73,7 +73,7 @@ parser.add_argument(
     "--skip-extensions",
     help="Comma-separated list of file extensions to skip (e.g. png,jpg,tscn)",
     type=str,
-    default="png,jpg,jpeg,gif,bmp,tscn,ico,ttf,woff,woff2,eot,mp3,mp4,wav,import,pdf,zip,tar,gz,7z,bin,exe,dll,so,dylib",
+    default="png,jpg,jpeg,gif,bmp,tscn,ico,ttf,woff,woff2,eot,mp3,mp4,wav,import,pdf,zip,tar,gz,7z,bin,exe,dll,so,dylib,lock,json-lock",
 )
 args = parser.parse_args()
 
