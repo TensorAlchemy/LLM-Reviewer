@@ -150,6 +150,26 @@ class GithubClient:
 
         Excludes: empty chunks, binary files, and files with skipped extensions.
         """
+        if not changes:
+            return ""
+
+        filtered_lines = []
+        current_file = None
+
+        for line in changes.splitlines():
+            # Check for file header lines
+            if line.startswith("diff --git"):
+                current_file = line.split()[-1][2:]  # Get b/filename part
+                if self.should_skip_file(current_file):
+                    current_file = None  # Skip this file
+                    continue
+                filtered_lines.append(line)
+
+            # Only include lines if we're processing a non-skipped file
+            elif current_file is not None:
+                filtered_lines.append(line)
+
+        return "\n".join(filtered_lines)
 
     def review_pr(self, payload) -> bool:
         """Review a PR. Returns True if review is successfully generated"""

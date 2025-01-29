@@ -131,6 +131,8 @@ def process_lines(lines: List[str]) -> List[str]:
         if is_file_name(line):
             numbered_lines.append(line)
             state.in_file = True
+            state.should_skip = False
+            found_first_chunk = False
             continue
 
         if line.startswith("@@"):
@@ -140,13 +142,13 @@ def process_lines(lines: List[str]) -> List[str]:
                 line, numbered_lines
             )
 
-            # Check if file is too large
-            current_size = sum(1 for l in lines if l.startswith((" ", "+")))
-            if current_size > MAX_FILE_LINES:
-                state.should_skip = True
-                numbered_lines = numbered_lines[:-1]  # Remove the last hunk header
-                numbered_lines.append(OMITTED_BREVITY_TEXT)
-                continue
+            # Only check file size on first hunk of each file 
+            if not state.should_skip and not found_first_chunk:
+                current_size = sum(1 for l in lines if l.startswith((" ", "+")))
+                if current_size > MAX_FILE_LINES:
+                    state.should_skip = True
+                    numbered_lines.append(OMITTED_BREVITY_TEXT)
+                    continue
 
             if state.should_skip:
                 numbered_lines.append(OMITTED_BREVITY_TEXT)
