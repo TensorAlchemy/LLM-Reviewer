@@ -1,11 +1,13 @@
 import re
 from typing import List, Optional, Tuple
 
+from loguru import logger
+
 from config import SKIP_EXTENSIONS
 
 # Text to show when file is omitted
 OMITTED_BREVITY_TEXT: str = "**FILE OMITTED FOR BREVITY**"
-MAX_FILE_LINES: int = 1000  # Skip files larger than this
+MAX_FILE_LINES: int = 2000  # Skip files larger than this
 
 
 class DiffState:
@@ -40,8 +42,22 @@ def check_file_size(lines: List[str]) -> bool:
     Returns:
         True if file should be skipped due to size
     """
-    current_size = sum(1 for l in lines if l.startswith((" ", "+")))
-    return current_size > MAX_FILE_LINES
+    # Look for actual content lines, not metadata
+    content_lines = [
+        l for l in lines if l.startswith((" ", "+")) and not l.startswith("+++")
+    ]
+
+    # For new files (starting with @@ -0,0), only count added lines
+    if any(l.startswith("@@ -0,0") for l in lines):
+        content_lines = [l for l in lines if l.startswith("+")]
+
+    current_size = len(content_lines)
+    if current_size > MAX_FILE_LINES:
+        logger.warning(
+            f"File too large: {current_size} lines > {MAX_FILE_LINES} maximum"
+        )
+        return True
+    return False
 
 
 def is_file_name(line: str) -> bool:
