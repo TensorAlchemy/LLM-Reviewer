@@ -7,11 +7,9 @@ import json
 import os
 import sys
 
-from loguru import logger
-
 import completion
 import githubs
-from config import DEFAULT_SKIP_EXTENSIONS
+from loguru import logger
 
 # Check required environment variables
 if not os.getenv("GITHUB_TOKEN"):

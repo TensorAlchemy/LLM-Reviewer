@@ -6,7 +6,6 @@ import os
 import traceback
 from typing import Any, List, Optional, Tuple
 
-from config import SKIP_EXTENSIONS
 import numbered_patch
 import requests
 from github import Github

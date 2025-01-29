@@ -1,16 +1,15 @@
 from typing import List
 
-from app.numbered_patch import number_lines_in_patch
 from app.numbered_patch import (
-    number_lines_in_patch,
-    extract_filename,
-    check_file_size,
-    is_file_name,
-    should_skip_file,
-    process_line,
-    parse_hunk_header,
-    DiffState,
     MAX_FILE_LINES,
+    DiffState,
+    check_file_size,
+    extract_filename,
+    is_file_name,
+    number_lines_in_patch,
+    parse_hunk_header,
+    process_line,
+    should_skip_file,
 )
 
 
@@ -52,7 +51,6 @@ def test_is_file_name():
     assert not is_file_name("+added line")
 
 
-import pytest
 from unittest.mock import patch
 
 
