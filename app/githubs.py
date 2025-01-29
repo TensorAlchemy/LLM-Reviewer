@@ -162,7 +162,7 @@ class GithubClient:
 
         current_file = None
         header_lines = []
-        
+
         for line in changes.splitlines():
             # Collect header lines
             if line.startswith(("diff --git", "--- ", "+++ ")):
@@ -170,7 +170,7 @@ class GithubClient:
                 if line.startswith("diff --git"):
                     current_file = line.split()[-1][2:]  # Get b/filename part
                 continue
-                
+
             # When we hit the hunk header (@@ line)
             if line.startswith("@@"):
                 if current_file and should_skip_file(current_file):
@@ -185,7 +185,7 @@ class GithubClient:
                     filtered_lines.append(line)
                 header_lines = []
                 continue
-                
+
             # Add content lines only if we're not in a skipped file
             if not header_lines and current_file and not should_skip_file(current_file):
                 filtered_lines.append(line)
@@ -235,7 +235,6 @@ class GithubClient:
         prompt = self.llm_client.get_pr_prompt(changes)
         review_json_str, cost = self.get_completion(prompt)
 
-        print(prompt)
         logger.info(f"review_json={review_json_str}")
         try:
             review_json = json.loads(review_json_str)
